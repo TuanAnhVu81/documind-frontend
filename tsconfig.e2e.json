@@ -12,7 +12,12 @@
     "noUnusedParameters": true,
     "baseUrl": ".",
     "allowImportingTsExtensions": true,
-    "paths": { "/src/api/*": ["src/api/*"], "@/*": ["src/*"] },
+    "paths": {
+      "/src/api/*": ["src/api/*"],
+      "/src/features/*": ["src/features/*"],
+      "/src/app/*": ["src/app/*"],
+      "@/*": ["src/*"]
+    },
     "types": ["node"]
   },
   "include": ["e2e/**/*.ts", "playwright.config.ts"]

@@ -8,6 +8,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createServer as createViteServer } from 'vite';
 
 const root = process.cwd();
+const phase = process.argv[2] ?? 'phase03';
+if (!['phase03', 'phase04'].includes(phase)) throw new Error('Unsupported test phase');
 const container = 'local_postgres';
 const dbName = `documind_fe_e2e_${randomBytes(8).toString('hex')}`;
 const nonce = randomBytes(32).toString('hex');
@@ -69,7 +71,17 @@ async function cleanup() {
   if (dbCreated) {
     if (!/^documind_fe_e2e_[0-9a-f]{16}$/.test(dbName))
       throw new Error('Unsafe test database name');
-    docker('exec', container, 'dropdb', '-U', 'postgres', '--if-exists', dbName);
+    let dropped = false;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        docker('exec', container, 'dropdb', '-U', 'postgres', '--if-exists', dbName);
+        dropped = true;
+        break;
+      } catch {
+        await delay(1000);
+      }
+    }
+    if (!dropped) throw new Error(`Could not remove isolated test database ${dbName}`);
   }
   if (tempDir) await rm(tempDir, { recursive: true, force: true });
 }
@@ -84,6 +96,7 @@ try {
   tempDir = await mkdtemp(resolve(tmpdir(), 'documind-fe-e2e-'));
   docker('exec', container, 'createdb', '-U', 'postgres', dbName);
   dbCreated = true;
+  console.log(`Isolated test database: ${dbName}`);
   const bePort = await freePort();
   const fePort = await freePort();
   const backendUrl = `http://127.0.0.1:${bePort}`;
@@ -136,6 +149,9 @@ try {
       '--documind.chat.enabled=false',
       '--documind.ingestion.worker-enabled=false',
       '--documind.ingestion.pipeline-enabled=false',
+      ...(phase === 'phase04'
+        ? ['--documind.auth.login-max-attempts=100', '--documind.auth.register-max-attempts=100']
+        : []),
     ],
     { cwd: tempDir, env, stdio: ['ignore', 'ignore', 'pipe'], windowsHide: true },
   );
@@ -147,8 +163,9 @@ try {
     [
       resolve(root, 'node_modules/@playwright/test/cli.js'),
       'test',
-      'e2e/api-phase03.spec.ts',
+      phase === 'phase04' ? 'e2e/auth-phase04.spec.ts' : 'e2e/api-phase03.spec.ts',
       '--workers=1',
+      ...(process.env.DOCUMIND_E2E_GREP ? ['--grep', process.env.DOCUMIND_E2E_GREP] : []),
     ],
     {
       cwd: root,
@@ -162,7 +179,10 @@ try {
     },
   );
   await waitForExit(browserTests);
-  if (browserTests.exitCode !== 0) process.exitCode = 1;
+  if (browserTests.exitCode !== 0) {
+    console.error(`Playwright stopped: exit=${browserTests.exitCode}, signal=${browserTests.signalCode}`);
+    process.exitCode = 1;
+  }
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Test harness failed');
   process.exitCode = 1;

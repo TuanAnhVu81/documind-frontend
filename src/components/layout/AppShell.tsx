@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+﻿import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import {
   BookOpenText,
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/Button';
 import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui/Dropdown';
 import { Sheet } from '@/components/ui/Dialog';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useAuth } from '@/features/auth/use-auth';
 
 const futureNavigation = [
   { label: 'Tài liệu', icon: FileText },
@@ -94,6 +95,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const menuRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const auth = useAuth();
 
   function handleDrawer(open: boolean) {
     setDrawerOpen(open);
@@ -186,7 +188,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </span>
                   <span className="account-copy">
                     <strong>Tài khoản</strong>
-                    <small>Chưa đăng nhập</small>
+                    <small>{auth.user?.email ?? 'Chưa đăng nhập'}</small>
                   </span>
                   <span className="sr-only">Mở menu tài khoản</span>
                   <ChevronDown className="account-chevron" size={16} aria-hidden="true" />
@@ -194,9 +196,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               }
             >
               <DropdownLabel>TÀI KHOẢN</DropdownLabel>
-              <p className="account-menu-hint">
-                Chức năng đăng nhập sẽ có trong phiên bản tiếp theo.
-              </p>
+              <p className="account-menu-hint">{auth.user?.email ?? 'Chưa đăng nhập'}</p>
+              {auth.status === 'authenticated' && (
+                <DropdownItem onSelect={() => void auth.logout()}>Đăng xuất</DropdownItem>
+              )}
               <DropdownSeparator />
               <DropdownItem onSelect={toggleTheme}>
                 {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
