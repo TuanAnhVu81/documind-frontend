@@ -10,3 +10,4 @@ test-results/
 
 # Local project documentation
 /docs/
+/.local/

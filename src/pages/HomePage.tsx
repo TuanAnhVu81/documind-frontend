@@ -1,133 +1,155 @@
-import { useEffect, useState } from 'react';
-import { ArrowDownRight, BookOpenText, FileSearch, Quote, Sparkles } from 'lucide-react';
-import { BackendStatus, type ConnectionState } from '@/components/feedback/BackendStatus';
+import {
+  ArrowUpRight,
+  BookOpenText,
+  FilePlus2,
+  FileSearch,
+  MessageSquareText,
+  Quote,
+  Sparkles,
+  WandSparkles,
+} from 'lucide-react';
+import { AppShell } from '@/components/layout/AppShell';
+import { BackendStatus } from '@/components/feedback/BackendStatus';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { useBackendConnection } from '@/features/system/useBackendConnection';
 
-const features = [
+const steps = [
   {
-    icon: BookOpenText,
     number: '01',
-    title: 'Tài liệu của bạn',
-    text: 'Tập hợp tài liệu để thông tin luôn trong tầm tay.',
+    icon: FilePlus2,
+    title: 'Thêm tài liệu',
+    text: 'Đưa tài liệu PDF, DOCX hoặc TXT vào không gian của bạn.',
   },
   {
-    icon: FileSearch,
     number: '02',
-    title: 'Câu hỏi rõ ràng',
-    text: 'Tìm điều bạn cần bằng cách đặt câu hỏi tự nhiên.',
+    icon: MessageSquareText,
+    title: 'Đặt câu hỏi',
+    text: 'Hỏi bằng ngôn ngữ tự nhiên về nội dung bạn muốn tìm.',
   },
   {
-    icon: Quote,
     number: '03',
-    title: 'Nguồn tham khảo',
-    text: 'Xem đoạn tài liệu liên quan để kiểm tra câu trả lời.',
+    icon: Quote,
+    title: 'Xem nguồn',
+    text: 'Đọc đoạn trích liên quan để kiểm tra thông tin.',
   },
 ];
 
 export default function HomePage() {
-  const [state, setState] = useState<ConnectionState>('checking');
-  const [attempt, setAttempt] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    const timer = window.setTimeout(() => controller.abort(), 6000);
-    void fetch('/actuator/health', { signal: controller.signal, cache: 'no-store' })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('health request failed');
-        const data: unknown = await response.json();
-        if (!data || typeof data !== 'object' || !('status' in data) || data.status !== 'UP') {
-          throw new Error('health status unavailable');
-        }
-        if (active) setState('connected');
-      })
-      .catch(() => {
-        if (active) setState('unavailable');
-      })
-      .finally(() => window.clearTimeout(timer));
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [attempt]);
-
-  function retryConnection() {
-    setState('checking');
-    setAttempt((current) => current + 1);
-  }
-
+  const { state, retry } = useBackendConnection();
   return (
-    <div className="site-shell">
-      <header className="site-header">
-        <a className="brand" href="/" aria-label="DocuMind — trang chủ">
-          <span className="brand-mark">
-            <BookOpenText size={19} strokeWidth={2} aria-hidden="true" />
-          </span>
-          <span>
-            DocuMind<span className="brand-dot">.</span>
-          </span>
-        </a>
-        <span className="header-note">
-          <span className="header-note-dot" /> MỘT KHÔNG GIAN CHO TÀI LIỆU
-        </span>
-      </header>
+    <AppShell>
+      <div className="overview-page">
+        <div className="page-heading">
+          <div>
+            <p className="page-eyebrow">
+              <Sparkles size={14} aria-hidden="true" /> KHÔNG GIAN CỦA BẠN
+            </p>
+            <h1>
+              Chào mừng đến DocuMind<span className="heading-dot">.</span>
+            </h1>
+            <p>Một nơi yên tĩnh để đọc, tìm hiểu và kết nối với tài liệu của bạn.</p>
+          </div>
+          <Badge tone="info">
+            <span className="badge-dot" aria-hidden="true" /> Không gian cá nhân
+          </Badge>
+        </div>
 
-      <main id="main-content" className="main-layout">
-        <section className="intro" aria-labelledby="intro-heading">
-          <p className="intro-label">
-            <Sparkles size={15} aria-hidden="true" /> CHÀO MỪNG ĐẾN VỚI DOCUMIND
-          </p>
-          <h1 id="intro-heading">
-            Hiểu tài liệu.
-            <br />
-            <span>Rõ từng nguồn.</span>
-          </h1>
-          <p className="intro-copy">
-            Một không gian giúp bạn tìm hiểu tài liệu, đặt câu hỏi và theo dõi những nguồn tham khảo
-            liên quan.
-          </p>
-          <div className="intro-divider" />
-          <p className="intro-footnote">
-            <span className="footnote-mark">✳</span> Bắt đầu từ thông tin bạn tin cậy.
-          </p>
+        <section className="hero-card" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <div className="hero-label">
+              <WandSparkles size={15} aria-hidden="true" /> HIỂU TÀI LIỆU THEO CÁCH CỦA BẠN
+            </div>
+            <h2 id="hero-title">
+              Từ tài liệu đến
+              <br />
+              <span>điều bạn cần biết.</span>
+            </h2>
+            <p>Đặt câu hỏi, khám phá thông tin và quay lại đúng đoạn tài liệu liên quan.</p>
+            <div className="hero-actions">
+              <Button disabled>
+                <FilePlus2 size={17} aria-hidden="true" /> Tải tài liệu
+              </Button>
+              <Button variant="secondary" disabled>
+                <MessageSquareText size={17} aria-hidden="true" /> Bắt đầu hội thoại
+              </Button>
+            </div>
+            <p className="availability-note">
+              Tải tài liệu và hội thoại sẽ khả dụng ở các bước tiếp theo.
+            </p>
+          </div>
+          <div className="hero-art" aria-hidden="true">
+            <div className="art-orbit art-orbit--outer" />
+            <div className="art-orbit art-orbit--inner" />
+            <div className="art-page art-page--back">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="art-page art-page--front">
+              <div className="art-page-icon">
+                <BookOpenText size={23} />
+              </div>
+              <div className="art-line art-line--long" />
+              <div className="art-line" />
+              <div className="art-line art-line--short" />
+              <div className="art-highlight" />
+            </div>
+            <span className="art-spark art-spark--one">✦</span>
+            <span className="art-spark art-spark--two">✳</span>
+            <div className="art-source">
+              <Quote size={15} />
+              <span>Thông tin có nguồn</span>
+            </div>
+          </div>
         </section>
 
-        <aside className="overview" aria-label="Tổng quan DocuMind">
-          <div className="overview-head">
-            <div>
-              <p className="section-label">KHÔNG GIAN LÀM VIỆC</p>
-              <h2>
-                Đọc ít hơn.
-                <br />
-                Hiểu sâu hơn.
-              </h2>
+        <div className="overview-grid">
+          <section className="steps-section" aria-labelledby="steps-title">
+            <div className="section-heading">
+              <div>
+                <p className="section-kicker">BẮT ĐẦU THẬT ĐƠN GIẢN</p>
+                <h2 id="steps-title">Ba bước để khám phá</h2>
+                <p>Đi từ câu hỏi đến thông tin bạn có thể kiểm tra.</p>
+              </div>
+              <span className="section-mark" aria-hidden="true">
+                <ArrowUpRight size={19} />
+              </span>
             </div>
-            <span className="overview-arrow">
-              <ArrowDownRight size={20} aria-hidden="true" />
-            </span>
-          </div>
-          <div className="feature-list">
-            {features.map(({ icon: Icon, number, title, text }) => (
-              <div className="feature-row" key={number}>
-                <span className="feature-icon">
-                  <Icon size={19} strokeWidth={1.7} aria-hidden="true" />
-                </span>
-                <div className="feature-copy">
+            <div className="steps-grid">
+              {steps.map(({ number, icon: Icon, title, text }) => (
+                <article className="step-card" key={number}>
+                  <div className="step-card-top">
+                    <span className="step-icon">
+                      <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+                    </span>
+                    <span className="step-number">{number}</span>
+                  </div>
                   <h3>{title}</h3>
                   <p>{text}</p>
-                </div>
-                <span className="feature-number">{number}</span>
-              </div>
-            ))}
-          </div>
-          <BackendStatus state={state} onRetry={retryConnection} />
-        </aside>
-      </main>
-
-      <footer className="site-footer">
-        <span>DOCUMIND</span>
-        <span>Mỗi câu trả lời đều bắt đầu từ một nguồn.</span>
-      </footer>
-    </div>
+                </article>
+              ))}
+            </div>
+          </section>
+          <aside className="overview-aside" aria-label="Thông tin không gian">
+            <div className="aside-card">
+              <span className="aside-icon">
+                <FileSearch size={18} aria-hidden="true" />
+              </span>
+              <p className="section-kicker">RÕ RÀNG HƠN MỖI NGÀY</p>
+              <h2>
+                Đừng chỉ tìm câu trả lời.
+                <br />
+                Hãy tìm cả nguồn.
+              </h2>
+              <p>Thông tin sẽ dễ tin cậy hơn khi bạn có thể xem lại tài liệu liên quan.</p>
+              <div className="aside-divider" />
+              <span className="aside-signature">DÀNH CHO NHỮNG CÂU HỎI HAY</span>
+            </div>
+            <BackendStatus state={state} onRetry={retry} />
+          </aside>
+        </div>
+      </div>
+    </AppShell>
   );
 }
