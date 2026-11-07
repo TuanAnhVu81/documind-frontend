@@ -1,13 +1,13 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AppErrorBoundary } from '@/components/feedback/AppErrorBoundary';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
 import { ToastProvider } from '@/components/ui/Feedback';
+import { queryClient } from '@/app/query-client';
 
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
-const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 export function App() {
   return (

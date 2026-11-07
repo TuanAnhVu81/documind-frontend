@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:phase03": "node scripts/run-phase03-e2e.mjs"
   },
   "engines": {
     "node": ">=24.15.0 <25"

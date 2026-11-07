@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => {
         '^/actuator/health$': { target: url.origin, changeOrigin: true },
       },
     },
-    test: { environment: 'jsdom', setupFiles: ['./src/tests/setup.ts'] },
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/tests/setup.ts'],
+      include: ['src/**/*.test.{ts,tsx}'],
+    },
   };
 });
