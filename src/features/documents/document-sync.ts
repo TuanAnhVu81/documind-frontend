@@ -1,5 +1,6 @@
 ﻿import type { QueryClient } from '@tanstack/react-query';
 import { authManager } from '@/features/auth/auth-manager';
+import { discardUserTurns } from '@/features/conversations/chat-turn';
 
 export type PendingDeletion = { id: string; accepted: boolean };
 type Change = {
@@ -77,6 +78,7 @@ export function notifyDocuments(
   operationId?: string,
   step?: number,
 ) {
+  if (kind === 'delete') discardUserTurns(userId);
   const message: Change = {
     userId,
     kind,
@@ -125,6 +127,7 @@ export function listenDocuments(client: QueryClient, userId: string): () => void
     seen.add(message.nonce);
     if (seen.size > 100) seen.delete(seen.values().next().value!);
     if (message.kind === 'delete') {
+      discardUserTurns(userId);
       client.removeQueries({ queryKey: ['user', userId, 'conversations'] });
       if (typeof message.id === 'string')
         trackDeletion(client, userId, message.id, message.accepted === true);

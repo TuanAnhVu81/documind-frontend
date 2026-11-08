@@ -2232,3 +2232,27 @@ a {
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
+.chat-history-container {
+  position: relative;
+  flex: 1;
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+.chat-history-container .chat-history {
+  flex: 1;
+}
+.chat-scroll-latest {
+  position: absolute;
+  bottom: 12px;
+  right: 24px;
+}
+.chat-turn-notice {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.chat-turn-notice .ui-button {
+  margin: 6px 6px 0 0;
+}

@@ -31,7 +31,7 @@ test('tạo, đọc lịch sử phân trang, điều hướng và xóa hội tho
   await expect(page).toHaveURL(/\/app\/chat\/[0-9a-f-]+$/);
   const first = page.url().split('/').pop()!;
   expect(first).toMatch(/^[0-9a-f-]{36}$/);
-  await expect(page.getByRole('button', { name: 'Gửi câu hỏi (chưa khả dụng)' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Gửi câu hỏi' })).toBeDisabled();
   await page.getByLabel('Câu hỏi của bạn').fill('Bản nháp hội thoại thứ nhất');
   execFileSync('docker', [
     'exec',
@@ -53,14 +53,22 @@ test('tạo, đọc lịch sử phân trang, điều hướng và xóa hội tho
   await expect(page.getByText('Tin nhắn thử nghiệm 1', { exact: true })).toBeAttached();
   await expect(page.locator('.chat-message')).toHaveCount(55);
   await page.getByLabel('Câu hỏi của bạn').fill('Bản nháp riêng của hội thoại thứ nhất');
-  await page.route('**/api/v1/conversations', async (route) => {
-    if (route.request().method() === 'POST') {
-      await route.fetch();
-      await route.abort();
-    } else await route.continue();
-  }, { times: 1 });
+  await page.route(
+    '**/api/v1/conversations',
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fetch();
+        await route.abort();
+      } else await route.continue();
+    },
+    { times: 1 },
+  );
   await page.getByRole('button', { name: 'Tạo hội thoại mới' }).click();
-  await expect(page.getByText('Chưa xác định được hội thoại đã tạo hay chưa. Hãy kiểm tra danh sách trước khi tạo lại.')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Chưa xác định được hội thoại đã tạo hay chưa. Hãy kiểm tra danh sách trước khi tạo lại.',
+    ),
+  ).toBeVisible();
   const sidebar = page.getByRole('navigation', { name: 'Danh sách hội thoại' });
   await expect(sidebar.locator('a')).toHaveCount(2);
   const newLink = sidebar.locator(`a:not([href="/app/chat/${first}"])`);

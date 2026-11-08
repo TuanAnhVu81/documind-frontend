@@ -2,6 +2,7 @@
 import { ApiError } from '@/api/errors';
 import type { Credentials, Session, User } from '@/api/types';
 import { clearSessionCache } from '@/app/query-client';
+import { clearPendingTurns } from '@/features/conversations/turn-storage';
 
 type AuthState = {
   status: 'checking' | 'authenticated' | 'guest';
@@ -95,6 +96,7 @@ class AuthManager {
   private clearPrivateData() {
     this.streams.forEach((controller) => controller.abort());
     this.streams.clear();
+    clearPendingTurns();
     this.clearing = this.clearing.then(() => clearSessionCache());
     return this.clearing;
   }

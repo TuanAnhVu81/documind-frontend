@@ -1,5 +1,5 @@
 ﻿import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
@@ -17,7 +17,8 @@ import remarkGfm from 'remark-gfm';
 import { conversationsApi } from '@/api/conversations';
 import { documentsApi } from '@/api/documents';
 import { ApiError } from '@/api/errors';
-import type { Message } from '@/api/types';
+import type { Message, MessagePage } from '@/api/types';
+import type { InfiniteData } from '@tanstack/react-query';
 import { queryKeys } from '@/app/query-client';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +27,19 @@ import { useAuth } from '@/features/auth/use-auth';
 import { authManager } from '@/features/auth/auth-manager';
 import { documentToken } from '@/features/documents/document-auth';
 import { hiddenDocumentSelections } from './conversation-utils';
+import {
+  beginTurn,
+  discardTurn,
+  generationKey,
+  markConversationUnavailable,
+  makeSnapshot,
+  reconcileTurn,
+  retryNewTurn,
+  retrySameTurn,
+  stopTurn,
+  type TurnState,
+} from './chat-turn';
+import { readPendingTurn } from './turn-storage';
 
 const message = (error: unknown) =>
   error instanceof ApiError ? error.message : 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.';
@@ -94,28 +108,101 @@ export function MessageBubble({ item }: { item: Message }) {
     </article>
   );
 }
-function History({ userId, id }: { userId: string; id: string }) {
+function History({
+  userId,
+  id,
+  turn,
+}: {
+  userId: string;
+  id: string;
+  turn: TurnState | undefined;
+}) {
   const viewport = useRef<HTMLDivElement>(null);
   const before = useRef<{ height: number; top: number } | null>(null);
   const initialized = useRef(false);
+  const nearBottom = useRef(true);
+  const [showLatest, setShowLatest] = useState(false);
   const history = useInfiniteQuery({
     queryKey: queryKeys.messages(userId, id),
     initialPageParam: undefined as number | undefined,
-    queryFn: async ({ pageParam, signal }) =>
-      conversationsApi.messages(
+    queryFn: async ({ pageParam, signal }) => {
+      const requestStartedAt = performance.now();
+      const result = await conversationsApi.messages(
         await documentToken(userId),
         id,
         { beforeOrdinal: pageParam, limit: 50 },
         { signal },
-      ),
+      );
+      return { ...result, requestStartedAt };
+    },
     getNextPageParam: (last) => (last.hasMore ? (last.nextBeforeOrdinal ?? undefined) : undefined),
     retry: false,
+    refetchInterval: (query) =>
+      query.state.error instanceof ApiError && query.state.error.status === 404
+        ? false
+        : turn?.phase === 'reconciling' ||
+            query.state.data?.pages.some((page) =>
+              page.items.some((item) => item.status === 'GENERATING'),
+            )
+          ? 2000
+          : false,
   });
-  const items = Array.from(
-    new Map(
-      (history.data?.pages ?? []).flatMap((page) => page.items).map((item) => [item.id, item]),
-    ).values(),
-  ).sort((a, b) => a.ordinal - b.ordinal);
+  const items = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          (history.data?.pages ?? []).flatMap((page) => page.items).map((item) => [item.id, item]),
+        ).values(),
+      ).sort((a, b) => a.ordinal - b.ordinal),
+    [history.data],
+  );
+  useEffect(() => {
+    if (history.error instanceof ApiError && history.error.status === 404)
+      markConversationUnavailable(userId, id);
+    else reconcileTurn(userId, id, items, history.data?.pages[0]?.requestStartedAt);
+  }, [userId, id, items, history.data, history.dataUpdatedAt, history.error, turn?.phase]);
+  const unavailable = history.error instanceof ApiError && history.error.status === 404;
+  const shown = (unavailable ? [] : items).map((item) =>
+    turn?.canonical?.id === item.id
+      ? turn.canonical
+      : item.status === 'GENERATING' &&
+          turn?.assistantId === item.id &&
+          (turn.phase === 'streaming' || turn.phase === 'reconciling')
+        ? { ...item, content: turn.partial || item.content }
+        : item,
+  );
+  const now = new Date().toISOString();
+  if (!unavailable && turn?.userMessageId && !shown.some((item) => item.id === turn.userMessageId))
+    shown.push({
+      id: turn.userMessageId,
+      conversationId: id,
+      ordinal: Number.MAX_SAFE_INTEGER - 1,
+      role: 'USER',
+      content: turn.body.content,
+      status: 'COMPLETE',
+      outcome: null,
+      sources: [],
+      createdAt: now,
+    });
+  if (
+    !unavailable &&
+    turn?.assistantId &&
+    !shown.some((item) => item.id === turn.assistantId) &&
+    (turn.canonical || turn.phase === 'streaming' || turn.phase === 'reconciling')
+  )
+    shown.push(
+      turn.canonical ?? {
+        id: turn.assistantId,
+        conversationId: id,
+        ordinal: Number.MAX_SAFE_INTEGER,
+        role: 'ASSISTANT',
+        content: turn.partial,
+        status: 'GENERATING',
+        outcome: null,
+        sources: [],
+        createdAt: now,
+      },
+    );
   useLayoutEffect(() => {
     const el = viewport.current;
     if (!el || !history.data) return;
@@ -127,59 +214,87 @@ function History({ userId, id }: { userId: string; id: string }) {
       initialized.current = true;
     }
   }, [history.data, userId, id]);
+  useLayoutEffect(() => {
+    const el = viewport.current;
+    if (el && initialized.current && nearBottom.current && !before.current)
+      el.scrollTop = el.scrollHeight;
+  }, [turn?.partial, turn?.canonical]);
   return (
-    <div
-      className="chat-history"
-      ref={viewport}
-      onScroll={(event) => scrollPositions.set(`${userId}:${id}`, event.currentTarget.scrollTop)}
-    >
-      {history.isPending && <p role="status">Đang tải lịch sử…</p>}
-      {history.isError && (
-        <div role="alert">
-          <p>
-            {history.error instanceof ApiError && history.error.status === 404
-              ? 'Không tìm thấy hội thoại hoặc bạn không có quyền truy cập.'
-              : message(history.error)}
-          </p>
-          <Button variant="secondary" onClick={() => void history.refetch()}>
-            Thử lại
+    <div className="chat-history-container">
+      <div
+        className="chat-history"
+        ref={viewport}
+        onScroll={(event) => {
+          const el = event.currentTarget;
+          scrollPositions.set(`${userId}:${id}`, el.scrollTop);
+          nearBottom.current = el.scrollHeight - el.clientHeight - el.scrollTop < 100;
+          setShowLatest(!nearBottom.current);
+        }}
+      >
+        {history.isPending && <p role="status">Đang tải lịch sử…</p>}
+        {history.isError && (
+          <div role="alert">
+            <p>
+              {history.error instanceof ApiError && history.error.status === 404
+                ? 'Không tìm thấy hội thoại hoặc bạn không có quyền truy cập.'
+                : message(history.error)}
+            </p>
+            <Button variant="secondary" onClick={() => void history.refetch()}>
+              Thử lại
+            </Button>
+          </div>
+        )}
+        {history.hasNextPage && (
+          <Button
+            variant="secondary"
+            loading={history.isFetchingNextPage}
+            onClick={() => {
+              const el = viewport.current;
+              if (el) before.current = { height: el.scrollHeight, top: el.scrollTop };
+              void history.fetchNextPage();
+            }}
+          >
+            Tải tin nhắn cũ hơn
           </Button>
+        )}
+        {history.isFetchNextPageError && (
+          <p role="alert">Chưa tải được tin nhắn cũ. Hãy thử lại.</p>
+        )}
+        {history.isSuccess && shown.length === 0 && !turn?.userMessageId && (
+          <div className="chat-welcome">
+            <span className="chat-welcome-icon">
+              <MessageCircle size={25} />
+            </span>
+            <h2>Bắt đầu từ một câu hỏi</h2>
+            <p>Đặt câu hỏi để khám phá thông tin trong tài liệu của bạn.</p>
+            <div className="chat-suggestions">
+              <span>Những điểm chính trong tài liệu là gì?</span>
+              <span>Hãy tóm tắt các nội dung quan trọng.</span>
+            </div>
+          </div>
+        )}
+        <div className="chat-message-list">
+          {shown.map((item) => (
+            <MessageBubble key={item.id} item={item} />
+          ))}
+          {(turn?.phase === 'streaming' || (turn?.phase === 'reconciling' && turn.partial)) && (
+            <p className="chat-message-status" role="status">
+              Nội dung đang nhận là bản tạm, chưa kiểm tra trích dẫn.
+            </p>
+          )}
         </div>
-      )}
-      {history.hasNextPage && (
+      </div>
+      {showLatest && (
         <Button
+          className="chat-scroll-latest"
           variant="secondary"
-          loading={history.isFetchingNextPage}
           onClick={() => {
-            const el = viewport.current;
-            if (el) before.current = { height: el.scrollHeight, top: el.scrollTop };
-            void history.fetchNextPage();
+            if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
           }}
         >
-          Tải tin nhắn cũ hơn
+          Xuống tin nhắn mới
         </Button>
       )}
-      {history.isFetchNextPageError && <p role="alert">Chưa tải được tin nhắn cũ. Hãy thử lại.</p>}
-      {history.isSuccess && items.length === 0 && (
-        <div className="chat-welcome">
-          <span className="chat-welcome-icon">
-            <MessageCircle size={25} />
-          </span>
-          <h2>Bắt đầu từ một câu hỏi</h2>
-          <p>
-            Khi chức năng hỏi đáp được kết nối, bạn có thể tìm hiểu thông tin từ tài liệu của mình.
-          </p>
-          <div className="chat-suggestions">
-            <span>Những điểm chính trong tài liệu là gì?</span>
-            <span>Hãy tóm tắt các nội dung quan trọng.</span>
-          </div>
-        </div>
-      )}
-      <div className="chat-message-list">
-        {items.map((item) => (
-          <MessageBubble key={item.id} item={item} />
-        ))}
-      </div>
     </div>
   );
 }
@@ -273,7 +388,19 @@ function ScopePicker({
     </>
   );
 }
-function ChatComposer({ userId, id }: { userId: string; id: string }) {
+function ChatComposer({
+  userId,
+  id,
+  turn,
+  historyGenerating,
+  historyUnavailable,
+}: {
+  userId: string;
+  id: string;
+  turn: TurnState | undefined;
+  historyGenerating: boolean;
+  historyUnavailable: boolean;
+}) {
   const cache = useQueryClient();
   const key = queryKeys.conversationDraft(userId, id);
   useQuery({ queryKey: key, queryFn: () => null, enabled: false, gcTime: Infinity });
@@ -287,6 +414,40 @@ function ChatComposer({ userId, id }: { userId: string; id: string }) {
     setSelected(ids);
     cache.setQueryData(key, { content: draft, selected: ids });
   }
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (!turn?.retryUntil) return;
+    const retryUntil = turn.retryUntil;
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setClock(now);
+      if (now >= retryUntil) window.clearInterval(timer);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [turn?.retryUntil]);
+  const cooldown = !!turn?.retryUntil && turn.retryUntil > clock;
+  const locked =
+    historyUnavailable ||
+    cooldown ||
+    turn?.phase === 'unavailable' ||
+    historyGenerating ||
+    turn?.phase === 'sending' ||
+    turn?.phase === 'streaming' ||
+    turn?.phase === 'reconciling' ||
+    turn?.phase === 'uncertain';
+  function submit() {
+    if (locked) return;
+    try {
+      const body = makeSnapshot(draft, selected);
+      if (beginTurn(userId, id, body)) {
+        setDraft('');
+        cache.setQueryData(key, { content: '', selected });
+      }
+    } catch (error) {
+      setValidation(error instanceof Error ? error.message : 'Câu hỏi chưa hợp lệ.');
+    }
+  }
+  const [validation, setValidation] = useState('');
   return (
     <div className="chat-composer">
       <ScopePicker userId={userId} selected={selected} setSelected={select} />
@@ -296,22 +457,83 @@ function ChatComposer({ userId, id }: { userId: string; id: string }) {
       <textarea
         id="chat-draft"
         rows={2}
-        maxLength={4000}
         value={draft}
         onChange={(event) => {
-          setDraft(event.target.value);
-          cache.setQueryData(key, { content: event.target.value, selected });
+          const content = Array.from(event.target.value).slice(0, 4000).join('');
+          setDraft(content);
+          setValidation('');
+          cache.setQueryData(key, { content, selected });
           event.target.style.height = 'auto';
           event.target.style.height = `${Math.min(event.target.scrollHeight, 160)}px`;
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            submit();
+          }
         }}
         placeholder="Nhập câu hỏi về tài liệu của bạn…"
       />
       <div className="chat-compose-footer">
-        <span>Gửi câu hỏi sẽ khả dụng khi kết nối streaming.</span>
-        <Button disabled aria-label="Gửi câu hỏi (chưa khả dụng)">
-          <Send size={16} /> Gửi
-        </Button>
+        <span>
+          {validation ||
+            `${Array.from(draft).length}/4.000 ký tự · Enter để gửi, Shift+Enter xuống dòng`}
+        </span>
+        {turn?.phase === 'sending' || turn?.phase === 'streaming' ? (
+          <Button variant="secondary" onClick={() => stopTurn(userId, id)}>
+            Dừng nhận
+          </Button>
+        ) : (
+          <Button disabled={locked || !draft.trim()} onClick={submit} aria-label="Gửi câu hỏi">
+            <Send size={16} /> Gửi
+          </Button>
+        )}
       </div>
+      {validation && (
+        <p role="alert" className="chat-hint">
+          {validation}
+        </p>
+      )}
+      {turn?.notice && (
+        <div className="chat-turn-notice" role="status">
+          {turn.notice}{' '}
+          {cooldown && `Thử lại sau ${Math.ceil((turn.retryUntil! - clock) / 1000)} giây.`}{' '}
+          {turn.requestId && `Mã yêu cầu: ${turn.requestId}`}{' '}
+          {turn.canRetrySame && (
+            <Button variant="secondary" onClick={() => retrySameTurn(userId, id)}>
+              Kiểm tra lại yêu cầu
+            </Button>
+          )}{' '}
+          {turn.canRetryNew && (
+            <Button variant="secondary" onClick={() => retryNewTurn(userId, id)}>
+              Thử lại lượt trả lời
+            </Button>
+          )}
+          {turn.phase === 'failed' && !turn.canRetryNew && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                const ids = turn.body.documentIds ?? [];
+                setDraft(turn.body.content);
+                setSelected(ids);
+                cache.setQueryData(key, { content: turn.body.content, selected: ids });
+              }}
+            >
+              Khôi phục câu hỏi
+            </Button>
+          )}
+        </div>
+      )}
+      {turn?.usage && (
+        <p className="chat-hint">
+          Sử dụng:{' '}
+          {turn.usage.promptTokens === null && turn.usage.completionTokens === null
+            ? 'chưa có số liệu token'
+            : `${turn.usage.promptTokens ?? 'chưa có'} token đầu vào, ${turn.usage.completionTokens ?? 'chưa có'} token đầu ra`}
+          {turn.usage.estimated ? ' (ước tính)' : ''} · Chi phí{' '}
+          {turn.usage.estimatedCostUsd === null ? 'chưa có' : `${turn.usage.estimatedCostUsd} USD`}
+        </p>
+      )}
     </div>
   );
 }
@@ -321,6 +543,34 @@ export default function ChatPage() {
   const userId = user?.id ?? '';
   const navigate = useNavigate();
   const cache = useQueryClient();
+  const historyData = useSyncExternalStore(
+    (listener) => cache.getQueryCache().subscribe(listener),
+    () =>
+      cache.getQueryData<InfiniteData<MessagePage>>(
+        queryKeys.messages(userId, conversationId ?? ''),
+      ),
+    () => undefined,
+  );
+  const historyError = useSyncExternalStore(
+    (listener) => cache.getQueryCache().subscribe(listener),
+    () =>
+      cache.getQueryState<InfiniteData<MessagePage>>(
+        queryKeys.messages(userId, conversationId ?? ''),
+      )?.error,
+    () => null,
+  );
+  const historyUnavailable = historyError instanceof ApiError && historyError.status === 404;
+  const historyGenerating =
+    historyData?.pages.some((page) => page.items.some((item) => item.status === 'GENERATING')) ??
+    false;
+  const turnQuery = useQuery<TurnState | null>({
+    queryKey: generationKey(userId, conversationId ?? ''),
+    queryFn: () => null,
+    enabled: false,
+    gcTime: Infinity,
+    initialData: () => (conversationId ? readPendingTurn(userId, conversationId) : undefined),
+  });
+  const turn = turnQuery.data ?? undefined;
   const [drawer, setDrawer] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -394,6 +644,7 @@ export default function ChatPage() {
         } else throw e;
       }
       if (authManager.getSnapshot().user?.id !== userId) return;
+      discardTurn(userId, id);
       const conversationKey = [...queryKeys.conversations(userId), id];
       await cache.cancelQueries({ queryKey: conversationKey });
       cache.removeQueries({ queryKey: conversationKey });
@@ -522,11 +773,19 @@ export default function ChatPage() {
           )}
           {conversationId ? (
             <>
-              <History key={`${userId}:${conversationId}`} userId={userId} id={conversationId} />
+              <History
+                key={`${userId}:${conversationId}`}
+                userId={userId}
+                id={conversationId}
+                turn={turn}
+              />
               <ChatComposer
                 key={`${userId}:${conversationId}`}
                 userId={userId}
                 id={conversationId}
+                turn={turn}
+                historyGenerating={historyGenerating}
+                historyUnavailable={historyUnavailable}
               />
             </>
           ) : (

@@ -14,7 +14,8 @@
     "test:e2e:phase03": "node scripts/run-phase03-e2e.mjs",
     "test:e2e:phase04": "node scripts/run-phase03-e2e.mjs phase04",
     "test:e2e:phase05": "node scripts/run-phase03-e2e.mjs phase05",
-    "test:e2e:phase06": "node scripts/run-phase03-e2e.mjs phase06"
+    "test:e2e:phase06": "node scripts/run-phase03-e2e.mjs phase06",
+    "test:e2e:phase07": "node scripts/run-phase03-e2e.mjs phase07"
   },
   "engines": {
     "node": ">=24.15.0 <25"
