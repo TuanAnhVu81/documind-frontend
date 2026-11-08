@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import {
   BookOpenText,
   ChevronDown,
@@ -23,13 +23,13 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { useAuth } from '@/features/auth/use-auth';
 
 const futureNavigation = [
-  { label: 'Tài liệu', icon: FileText },
   { label: 'Hội thoại', icon: MessageSquareText },
   { label: 'Thống kê', icon: ChartNoAxesCombined },
   { label: 'Cài đặt', icon: Settings2 },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const isDocuments = useLocation().pathname.startsWith('/app/documents');
   return (
     <>
       <Link
@@ -51,14 +51,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="shell-nav" aria-label="Điều hướng chính">
         <p className="shell-nav-label">KHÔNG GIAN LÀM VIỆC</p>
         <Link
-          className="shell-nav-link shell-nav-link--active"
+          className={`shell-nav-link ${!isDocuments ? 'shell-nav-link--active' : ''}`}
           to="/app"
-          aria-current="page"
+          aria-current={!isDocuments ? 'page' : undefined}
           aria-label="Tổng quan"
           onClick={onNavigate}
         >
           <LayoutGrid size={18} aria-hidden="true" />
           <span>Tổng quan</span>
+        </Link>
+        <Link
+          className={`shell-nav-link ${isDocuments ? 'shell-nav-link--active' : ''}`}
+          to="/app/documents"
+          aria-current={isDocuments ? 'page' : undefined}
+          aria-label="Tài liệu"
+          title="Tài liệu"
+          onClick={onNavigate}
+        >
+          <FileText size={18} aria-hidden="true" />
+          <span>Tài liệu</span>
         </Link>
         {futureNavigation.map(({ label, icon: Icon }) => (
           <div
@@ -96,6 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sidebarRef = useRef<HTMLElement>(null);
   const { theme, toggleTheme } = useTheme();
   const auth = useAuth();
+  const isDocuments = useLocation().pathname.startsWith('/app/documents');
 
   function handleDrawer(open: boolean) {
     setDrawerOpen(open);
@@ -158,7 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="shell-breadcrumb">
               <span>KHÔNG GIAN</span>
               <span className="breadcrumb-divider">/</span>
-              <strong>Tổng quan</strong>
+              <strong>{isDocuments ? 'Tài liệu' : 'Tổng quan'}</strong>
             </div>
           </div>
           <div className="shell-header-actions">

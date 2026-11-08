@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:phase03": "node scripts/run-phase03-e2e.mjs",
-    "test:e2e:phase04": "node scripts/run-phase03-e2e.mjs phase04"
+    "test:e2e:phase04": "node scripts/run-phase03-e2e.mjs phase04",
+    "test:e2e:phase05": "node scripts/run-phase03-e2e.mjs phase05"
   },
   "engines": {
     "node": ">=24.15.0 <25"

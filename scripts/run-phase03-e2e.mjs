@@ -9,7 +9,7 @@ import { createServer as createViteServer } from 'vite';
 
 const root = process.cwd();
 const phase = process.argv[2] ?? 'phase03';
-if (!['phase03', 'phase04'].includes(phase)) throw new Error('Unsupported test phase');
+if (!['phase03', 'phase04', 'phase05'].includes(phase)) throw new Error('Unsupported test phase');
 const container = 'local_postgres';
 const dbName = `documind_fe_e2e_${randomBytes(8).toString('hex')}`;
 const nonce = randomBytes(32).toString('hex');
@@ -149,6 +149,9 @@ try {
       '--documind.chat.enabled=false',
       '--documind.ingestion.worker-enabled=false',
       '--documind.ingestion.pipeline-enabled=false',
+      ...(phase === 'phase05'
+        ? ['--documind.storage.cleanup-interval-ms=15000', '--documind.upload.max-per-window=100']
+        : []),
       ...(phase === 'phase04'
         ? ['--documind.auth.login-max-attempts=100', '--documind.auth.register-max-attempts=100']
         : []),
@@ -163,7 +166,11 @@ try {
     [
       resolve(root, 'node_modules/@playwright/test/cli.js'),
       'test',
-      phase === 'phase04' ? 'e2e/auth-phase04.spec.ts' : 'e2e/api-phase03.spec.ts',
+      phase === 'phase05'
+        ? 'e2e/documents-phase05.spec.ts'
+        : phase === 'phase04'
+          ? 'e2e/auth-phase04.spec.ts'
+          : 'e2e/api-phase03.spec.ts',
       '--workers=1',
       ...(process.env.DOCUMIND_E2E_GREP ? ['--grep', process.env.DOCUMIND_E2E_GREP] : []),
     ],
@@ -180,7 +187,9 @@ try {
   );
   await waitForExit(browserTests);
   if (browserTests.exitCode !== 0) {
-    console.error(`Playwright stopped: exit=${browserTests.exitCode}, signal=${browserTests.signalCode}`);
+    console.error(
+      `Playwright stopped: exit=${browserTests.exitCode}, signal=${browserTests.signalCode}`,
+    );
     process.exitCode = 1;
   }
 } catch (error) {

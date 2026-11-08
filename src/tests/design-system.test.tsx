@@ -142,8 +142,8 @@ describe('hệ thống thiết kế', () => {
         </ThemeProvider>
       </MemoryRouter>,
     );
-    const item = screen.getByRole('img', { name: 'Tài liệu — Sắp có' });
-    expect(item).toHaveAttribute('title', 'Tài liệu — Sắp có');
+    const item = screen.getByRole('img', { name: 'Hội thoại — Sắp có' });
+    expect(item).toHaveAttribute('title', 'Hội thoại — Sắp có');
   });
 
   it('giữ nhãn và trạng thái lỗi cho các trường nhập', () => {

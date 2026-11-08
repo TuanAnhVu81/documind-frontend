@@ -13,6 +13,7 @@ import { BackendStatus } from '@/components/feedback/BackendStatus';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useBackendConnection } from '@/features/system/useBackendConnection';
+import { Link } from 'react-router';
 
 const steps = [
   {
@@ -67,15 +68,15 @@ export default function HomePage() {
             </h2>
             <p>Đặt câu hỏi, khám phá thông tin và quay lại đúng đoạn tài liệu liên quan.</p>
             <div className="hero-actions">
-              <Button disabled>
+              <Link className="ui-button ui-button--primary ui-button--medium" to="/app/documents">
                 <FilePlus2 size={17} aria-hidden="true" /> Tải tài liệu
-              </Button>
+              </Link>
               <Button variant="secondary" disabled>
                 <MessageSquareText size={17} aria-hidden="true" /> Bắt đầu hội thoại
               </Button>
             </div>
             <p className="availability-note">
-              Tải tài liệu và hội thoại sẽ khả dụng ở các bước tiếp theo.
+              Tải tài liệu lên để bắt đầu. Hội thoại sẽ khả dụng ở bước tiếp theo.
             </p>
           </div>
           <div className="hero-art" aria-hidden="true">
