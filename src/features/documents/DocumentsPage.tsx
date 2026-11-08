@@ -16,6 +16,7 @@ import {
   deletionKey,
   notifyDocuments,
   removeTrackedDeletion,
+  refreshConversationSources,
   trackDeletion,
   type PendingDeletion,
 } from './document-sync';
@@ -201,7 +202,9 @@ export default function DocumentsPage() {
     (id: string, accepted: boolean) => {
       if (!active.current || authManager.getSnapshot().user?.id !== userId) return;
       setCompletedDeletions((current) => (current.includes(id) ? current : [...current, id]));
+      refreshConversationSources(queryClient, userId, id);
       removeTrackedDeletion(queryClient, userId, id);
+      notifyDocuments(userId, 'delete-complete', id);
       setSelectedId((current) => (current === id ? null : current));
       setToast({
         title: accepted ? 'Đã xóa tài liệu' : 'Tài liệu không còn trong thư viện',
@@ -320,7 +323,7 @@ export default function DocumentsPage() {
       const token = await documentToken(userId);
       if (controller.signal.aborted) return;
       trackDeletion(queryClient, userId, id, false);
-      queryClient.removeQueries({ queryKey: ['user', userId, 'conversations'] });
+      refreshConversationSources(queryClient, userId, id);
       submitted = true;
       notifyDocuments(userId, 'delete', id, false, operationId, 0);
       await documentsApi.delete(token, id, { signal: controller.signal });
@@ -345,6 +348,7 @@ export default function DocumentsPage() {
       ) {
         track = false;
         removeTrackedDeletion(queryClient, userId, id);
+        refreshConversationSources(queryClient, userId);
       }
       if (isCurrent() && !controller.signal.aborted)
         setDetailError(

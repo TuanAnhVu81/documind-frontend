@@ -10,13 +10,12 @@
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "baseUrl": ".",
     "allowImportingTsExtensions": true,
     "paths": {
-      "/src/api/*": ["src/api/*"],
-      "/src/features/*": ["src/features/*"],
-      "/src/app/*": ["src/app/*"],
-      "@/*": ["src/*"]
+      "/src/api/*": ["./src/api/*"],
+      "/src/features/*": ["./src/features/*"],
+      "/src/app/*": ["./src/app/*"],
+      "@/*": ["./src/*"]
     },
     "types": ["node"]
   },

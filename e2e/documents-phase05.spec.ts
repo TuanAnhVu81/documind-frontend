@@ -286,13 +286,38 @@ test('đồng bộ thư viện hai tab khi thiếu BroadcastChannel', async ({ p
   await expect(firstCard).toBeVisible();
   await expect(secondCard).toBeVisible({ timeout: 3000 });
   await second.getByRole('link', { name: 'Tổng quan', exact: true }).click();
-  const userId = await second.evaluate(async () => {
+  const fixture = await second.evaluate(async () => {
     const { authManager } = await import('/src/features/auth/auth-manager.ts');
     const { queryClient } = await import('/src/app/query-client.ts');
+    const { documentsApi } = await import('/src/api/documents.ts');
     const id = authManager.getSnapshot().user?.id;
     if (!id) throw new Error('Thiếu tài khoản test');
-    queryClient.setQueryData(['user', id, 'conversations', 'cached-history'], { sources: ['old'] });
-    return id;
+    const token = await authManager.accessToken();
+    if (!token) throw new Error('Thiếu phiên test');
+    const document = (await documentsApi.list(token)).items.find(
+      (item) => item.filename === 'Hai tab.txt',
+    );
+    if (!document) throw new Error('Thiếu tài liệu test');
+    queryClient.setQueryData(['user', id, 'conversations', 'cached-history', 'messages'], {
+      pages: [
+        {
+          items: [
+            {
+              sources: [
+                {
+                  documentId: document.id,
+                  filename: 'Hai tab.txt',
+                  snippet: 'Dữ liệu tổng hợp.',
+                  availability: 'AVAILABLE',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      pageParams: [undefined],
+    });
+    return { id, documentId: document.id };
   });
   await firstCard.getByRole('button', { name: /Chi tiết/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Chi tiết tài liệu' });
@@ -300,12 +325,26 @@ test('đồng bộ thư viện hai tab khi thiếu BroadcastChannel', async ({ p
   await dialog.getByRole('button', { name: 'Xác nhận xóa' }).click();
   await expect
     .poll(() =>
-      second.evaluate(async (id) => {
+      second.evaluate(async ({ id }) => {
         const { queryClient } = await import('/src/app/query-client.ts');
-        return queryClient.getQueryData(['user', id, 'conversations', 'cached-history']) ?? null;
-      }, userId),
+        const key = ['user', id, 'conversations', 'cached-history', 'messages'];
+        const data = queryClient.getQueryData<{
+          pages: {
+            items: {
+              sources: { filename: string | null; snippet: string | null; availability: string }[];
+            }[];
+          }[];
+        }>(key);
+        return {
+          source: data?.pages[0].items[0].sources[0],
+          invalidated: queryClient.getQueryState(key)?.isInvalidated,
+        };
+      }, fixture),
     )
-    .toBeNull();
+    .toMatchObject({
+      source: { filename: null, snippet: null, availability: 'DELETED' },
+      invalidated: true,
+    });
   await second.getByRole('link', { name: 'Tài liệu', exact: true }).click();
   await expect(secondCard.getByText('Đang xóa')).toBeVisible({ timeout: 4000 });
   await expect(secondCard).toHaveCount(0, { timeout: 30_000 });

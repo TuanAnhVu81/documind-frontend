@@ -1,11 +1,13 @@
 ﻿import type { QueryClient } from '@tanstack/react-query';
 import { authManager } from '@/features/auth/auth-manager';
+import type { InfiniteData } from '@tanstack/react-query';
+import type { MessagePage } from '@/api/types';
 import { discardUserTurns } from '@/features/conversations/chat-turn';
 
 export type PendingDeletion = { id: string; accepted: boolean };
 type Change = {
   userId: string;
-  kind: 'upload' | 'delete' | 'delete-cancel';
+  kind: 'upload' | 'delete' | 'delete-cancel' | 'delete-complete';
   id?: string;
   accepted?: boolean;
   operationId?: string;
@@ -17,6 +19,35 @@ const storageKey = 'documind-documents-change';
 const pendingPrefix = 'documind-document-deletions:';
 export const deletionKey = (userId: string) =>
   ['user', userId, 'document-deletion-pending'] as const;
+export function refreshConversationSources(
+  client: QueryClient,
+  userId: string,
+  documentId?: string,
+) {
+  const prefix = ['user', userId, 'conversations'];
+  const cancelled = client.cancelQueries({ queryKey: prefix });
+  if (documentId) {
+    client.setQueriesData<InfiniteData<MessagePage>>(
+      { queryKey: prefix, predicate: (query) => query.queryKey[4] === 'messages' },
+      (data) =>
+        data && {
+          ...data,
+          pages: data.pages.map((page) => ({
+            ...page,
+            items: page.items.map((item) => ({
+              ...item,
+              sources: item.sources.map((source) =>
+                source.documentId === documentId
+                  ? { ...source, filename: null, snippet: null, availability: 'DELETED' as const }
+                  : source,
+              ),
+            })),
+          })),
+        },
+    );
+  }
+  void cancelled.then(() => client.invalidateQueries({ queryKey: prefix }));
+}
 export function trackDeletion(client: QueryClient, userId: string, id: string, accepted: boolean) {
   client.setQueryData<PendingDeletion[]>(deletionKey(userId), (current = []) => {
     const old = current.find((item) => item.id === id);
@@ -78,7 +109,7 @@ export function notifyDocuments(
   operationId?: string,
   step?: number,
 ) {
-  if (kind === 'delete') discardUserTurns(userId);
+  if (kind === 'delete' || kind === 'delete-complete') discardUserTurns(userId);
   const message: Change = {
     userId,
     kind,
@@ -107,6 +138,7 @@ export function notifyDocuments(
 export function listenDocuments(client: QueryClient, userId: string): () => void {
   const seen = new Set<string>();
   const steps = new Map<string, number>();
+  const completed = new Set<string>();
   function receive(value: unknown) {
     if (!value || typeof value !== 'object') return;
     const message = value as Partial<Change>;
@@ -115,7 +147,10 @@ export function listenDocuments(client: QueryClient, userId: string): () => void
       authManager.getSnapshot().user?.id !== userId ||
       typeof message.nonce !== 'string' ||
       seen.has(message.nonce) ||
-      (message.kind !== 'upload' && message.kind !== 'delete' && message.kind !== 'delete-cancel')
+      (message.kind !== 'upload' &&
+        message.kind !== 'delete' &&
+        message.kind !== 'delete-cancel' &&
+        message.kind !== 'delete-complete')
     )
       return;
     if (message.operationId && typeof message.step === 'number') {
@@ -127,13 +162,22 @@ export function listenDocuments(client: QueryClient, userId: string): () => void
     seen.add(message.nonce);
     if (seen.size > 100) seen.delete(seen.values().next().value!);
     if (message.kind === 'delete') {
+      if (message.id && completed.has(message.id)) return;
       discardUserTurns(userId);
-      client.removeQueries({ queryKey: ['user', userId, 'conversations'] });
       if (typeof message.id === 'string')
         trackDeletion(client, userId, message.id, message.accepted === true);
+      refreshConversationSources(client, userId, message.id);
     }
-    if (message.kind === 'delete-cancel' && typeof message.id === 'string')
+    if (message.kind === 'delete-cancel' && typeof message.id === 'string') {
       removeTrackedDeletion(client, userId, message.id);
+      refreshConversationSources(client, userId);
+    }
+    if (message.kind === 'delete-complete' && typeof message.id === 'string') {
+      completed.add(message.id);
+      discardUserTurns(userId);
+      refreshConversationSources(client, userId, message.id);
+      removeTrackedDeletion(client, userId, message.id);
+    }
     void client.invalidateQueries({ queryKey: ['user', userId, 'documents'] });
   }
   let channel: BroadcastChannel | null = null;

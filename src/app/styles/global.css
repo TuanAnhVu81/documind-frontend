@@ -2256,3 +2256,183 @@ a {
 .chat-turn-notice .ui-button {
   margin: 6px 6px 0 0;
 }
+
+/* Citation inspection */
+.chat-history-layout {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 350px;
+  min-width: 0;
+}
+.chat-history-layout .chat-history-container {
+  min-width: 0;
+}
+.citation-chip {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: baseline;
+  margin: 0 2px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 0.82em;
+  font-weight: 700;
+  cursor: pointer;
+}
+.citation-chip:hover,
+.citation-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.citation-panel-desktop {
+  width: min(320px, 38%);
+  flex: none;
+  border-left: 1px solid var(--border);
+  background: var(--surface-soft);
+  overflow-y: auto;
+}
+.citation-panel-body {
+  padding: 20px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.citation-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.citation-panel-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 20px;
+  font-size: 16px;
+}
+.citation-eyebrow,
+.citation-source-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+.citation-info {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 13px;
+}
+.citation-info span:last-child {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.citation-excerpt {
+  margin: 10px 0 14px;
+  padding: 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px 9px 9px 4px;
+  background: var(--surface);
+  font-size: 13px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+.citation-excerpt mark {
+  color: inherit;
+  background: transparent;
+}
+.citation-explanation {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.citation-warning {
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.citation-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.citation-message-actions button {
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.ui-dialog--bottom .citation-panel-body {
+  padding: 14px 0;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+/* Keep the history, source panel and composer within the desktop workspace. */
+@media (min-width: 1101px) {
+  .chat-layout {
+    height: max(620px, min(720px, calc(100dvh - 200px)));
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .chat-main {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  .chat-sidebar {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .chat-history-layout,
+  .chat-history-container,
+  .chat-history-container .chat-history {
+    min-height: 0;
+  }
+  .citation-panel-desktop {
+    min-height: 0;
+    max-height: 100%;
+  }
+}
+.citation-panel-desktop:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.citation-tooltip-wrap {
+  display: inline-block;
+  position: relative;
+}
+.citation-tooltip-content {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(100% + 7px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(260px, 70vw);
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: var(--text);
+  color: var(--surface);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: normal;
+  pointer-events: none;
+  box-shadow: 0 3px 12px #0002;
+}
+.citation-tooltip-wrap:hover .citation-tooltip-content,
+.citation-tooltip-wrap:focus-within .citation-tooltip-content {
+  display: block;
+}

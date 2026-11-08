@@ -12,8 +12,6 @@ import {
   Send,
   Trash2,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { conversationsApi } from '@/api/conversations';
 import { documentsApi } from '@/api/documents';
 import { ApiError } from '@/api/errors';
@@ -26,7 +24,11 @@ import { Dialog, Sheet } from '@/components/ui/Dialog';
 import { useAuth } from '@/features/auth/use-auth';
 import { authManager } from '@/features/auth/auth-manager';
 import { documentToken } from '@/features/documents/document-auth';
+import { deletionKey, type PendingDeletion } from '@/features/documents/document-sync';
 import { hiddenDocumentSelections } from './conversation-utils';
+import { CitationMarkdown } from './CitationMarkdown';
+import { CitationPanel } from './CitationPanel';
+import { citationSource, safeSources, type CitationSelection } from './citation-utils';
 import {
   beginTurn,
   discardTurn,
@@ -45,30 +47,22 @@ const message = (error: unknown) =>
   error instanceof ApiError ? error.message : 'Không thể hoàn tất yêu cầu. Vui lòng thử lại.';
 const scrollPositions = new Map<string, number>();
 
-function CodeBlock({ children }: { children?: React.ReactNode }) {
-  const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const ref = useRef<HTMLPreElement>(null);
-  async function copy() {
+export function MessageBubble({
+  item,
+  onSelect,
+}: {
+  item: Message;
+  onSelect?: (selection: CitationSelection, trigger: HTMLElement) => void;
+}) {
+  const [copyStatus, setCopyStatus] = useState('');
+  async function copyAnswer() {
     try {
-      await navigator.clipboard.writeText(ref.current?.textContent ?? '');
-      setCopied(true);
-      setFailed(false);
+      await navigator.clipboard.writeText(item.content);
+      setCopyStatus('Đã sao chép câu trả lời.');
     } catch {
-      setFailed(true);
+      setCopyStatus('Không thể sao chép. Hãy chọn và sao chép thủ công.');
     }
   }
-  return (
-    <div className="chat-code">
-      <button type="button" onClick={() => void copy()}>
-        {copied ? 'Đã sao chép' : 'Sao chép'}
-      </button>
-      <pre ref={ref}>{children}</pre>
-      {failed && <span role="status">Không thể sao chép. Hãy chọn và sao chép thủ công.</span>}
-    </div>
-  );
-}
-export function MessageBubble({ item }: { item: Message }) {
   return (
     <article className={`chat-message chat-message--${item.role.toLowerCase()}`}>
       <div className="chat-message-meta">
@@ -80,32 +74,33 @@ export function MessageBubble({ item }: { item: Message }) {
         </time>
       </div>
       <div className="chat-markdown">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
-            img: ({ alt }) => <span>{alt ?? ''}</span>,
-            a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noopener noreferrer">
-                {children}
-              </a>
-            ),
-          }}
-        >
-          {item.content}
-        </ReactMarkdown>
+        <CitationMarkdown item={item} onSelect={onSelect} />
       </div>
       {item.status !== 'COMPLETE' && (
         <p className="chat-message-status">
           {item.status === 'GENERATING' ? 'Đang tạo câu trả lời' : 'Câu trả lời chưa hoàn tất'}
         </p>
       )}
-      {item.sources.length > 0 && (
-        <p className="chat-message-status">
-          {item.sources.length} nguồn trích dẫn · Chi tiết nguồn sẽ có ở giai đoạn tiếp theo.
-        </p>
+      {item.role === 'ASSISTANT' && item.status === 'COMPLETE' && (
+        <div className="citation-message-actions">
+          <button type="button" onClick={() => void copyAnswer()}>
+            Sao chép câu trả lời
+          </button>
+          {copyStatus && <span role="status">{copyStatus}</span>}
+        </div>
       )}
     </article>
+  );
+}
+function subscribeNarrow(listener: () => void) {
+  if (typeof window.matchMedia !== 'function') return () => {};
+  const media = window.matchMedia('(max-width: 1100px)');
+  media.addEventListener('change', listener);
+  return () => media.removeEventListener('change', listener);
+}
+function isNarrow() {
+  return (
+    typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 1100px)').matches
   );
 }
 function History({
@@ -122,6 +117,21 @@ function History({
   const initialized = useRef(false);
   const nearBottom = useRef(true);
   const [showLatest, setShowLatest] = useState(false);
+  const [selection, setSelection] = useState<CitationSelection | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const narrow = useSyncExternalStore(subscribeNarrow, isNarrow, () => true);
+  const pending = useQuery<PendingDeletion[]>({
+    queryKey: deletionKey(userId),
+    queryFn: async () => [],
+    enabled: false,
+    initialData: [],
+    staleTime: Infinity,
+  });
+  const deleting = useMemo(
+    () => new Set((pending.data ?? []).map((entry) => entry.id)),
+    [pending.data],
+  );
   const history = useInfiniteQuery({
     queryKey: queryKeys.messages(userId, id),
     initialPageParam: undefined as number | undefined,
@@ -203,6 +213,29 @@ function History({
         createdAt: now,
       },
     );
+  const displayMessages = shown.map((item) => ({
+    ...item,
+    sources: safeSources(item.sources, deleting),
+  }));
+  const selectedSource = citationSource(displayMessages, selection);
+  const hasSelectedSource = !!selectedSource;
+  function closeSource() {
+    setSelection(null);
+    requestAnimationFrame(() => {
+      const fallback = Array.from(
+        viewport.current?.querySelectorAll<HTMLButtonElement>('.citation-chip') ?? [],
+      ).find(
+        (button) =>
+          button.dataset.citationMessageId === selection?.messageId &&
+          button.dataset.citationSourceId === selection?.sourceId,
+      );
+      const target = triggerRef.current?.isConnected ? triggerRef.current : fallback;
+      target?.focus();
+    });
+  }
+  useLayoutEffect(() => {
+    if (!narrow && hasSelectedSource) panelRef.current?.focus();
+  }, [narrow, hasSelectedSource, selection?.messageId, selection?.sourceId]);
   useLayoutEffect(() => {
     const el = viewport.current;
     if (!el || !history.data) return;
@@ -220,81 +253,122 @@ function History({
       el.scrollTop = el.scrollHeight;
   }, [turn?.partial, turn?.canonical]);
   return (
-    <div className="chat-history-container">
-      <div
-        className="chat-history"
-        ref={viewport}
-        onScroll={(event) => {
-          const el = event.currentTarget;
-          scrollPositions.set(`${userId}:${id}`, el.scrollTop);
-          nearBottom.current = el.scrollHeight - el.clientHeight - el.scrollTop < 100;
-          setShowLatest(!nearBottom.current);
-        }}
-      >
-        {history.isPending && <p role="status">Đang tải lịch sử…</p>}
-        {history.isError && (
-          <div role="alert">
-            <p>
-              {history.error instanceof ApiError && history.error.status === 404
-                ? 'Không tìm thấy hội thoại hoặc bạn không có quyền truy cập.'
-                : message(history.error)}
-            </p>
-            <Button variant="secondary" onClick={() => void history.refetch()}>
-              Thử lại
-            </Button>
-          </div>
-        )}
-        {history.hasNextPage && (
-          <Button
-            variant="secondary"
-            loading={history.isFetchingNextPage}
-            onClick={() => {
-              const el = viewport.current;
-              if (el) before.current = { height: el.scrollHeight, top: el.scrollTop };
-              void history.fetchNextPage();
-            }}
-          >
-            Tải tin nhắn cũ hơn
-          </Button>
-        )}
-        {history.isFetchNextPageError && (
-          <p role="alert">Chưa tải được tin nhắn cũ. Hãy thử lại.</p>
-        )}
-        {history.isSuccess && shown.length === 0 && !turn?.userMessageId && (
-          <div className="chat-welcome">
-            <span className="chat-welcome-icon">
-              <MessageCircle size={25} />
-            </span>
-            <h2>Bắt đầu từ một câu hỏi</h2>
-            <p>Đặt câu hỏi để khám phá thông tin trong tài liệu của bạn.</p>
-            <div className="chat-suggestions">
-              <span>Những điểm chính trong tài liệu là gì?</span>
-              <span>Hãy tóm tắt các nội dung quan trọng.</span>
-            </div>
-          </div>
-        )}
-        <div className="chat-message-list">
-          {shown.map((item) => (
-            <MessageBubble key={item.id} item={item} />
-          ))}
-          {(turn?.phase === 'streaming' || (turn?.phase === 'reconciling' && turn.partial)) && (
-            <p className="chat-message-status" role="status">
-              Nội dung đang nhận là bản tạm, chưa kiểm tra trích dẫn.
-            </p>
-          )}
-        </div>
-      </div>
-      {showLatest && (
-        <Button
-          className="chat-scroll-latest"
-          variant="secondary"
-          onClick={() => {
-            if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
+    <div className="chat-history-layout">
+      <div className="chat-history-container">
+        <div
+          className="chat-history"
+          ref={viewport}
+          onScroll={(event) => {
+            const el = event.currentTarget;
+            scrollPositions.set(`${userId}:${id}`, el.scrollTop);
+            nearBottom.current = el.scrollHeight - el.clientHeight - el.scrollTop < 100;
+            setShowLatest(!nearBottom.current);
           }}
         >
-          Xuống tin nhắn mới
-        </Button>
+          {history.isPending && <p role="status">Đang tải lịch sử…</p>}
+          {history.isError && (
+            <div role="alert">
+              <p>
+                {history.error instanceof ApiError && history.error.status === 404
+                  ? 'Không tìm thấy hội thoại hoặc bạn không có quyền truy cập.'
+                  : message(history.error)}
+              </p>
+              <Button variant="secondary" onClick={() => void history.refetch()}>
+                Thử lại
+              </Button>
+            </div>
+          )}
+          {history.hasNextPage && (
+            <Button
+              variant="secondary"
+              loading={history.isFetchingNextPage}
+              onClick={() => {
+                const el = viewport.current;
+                if (el) before.current = { height: el.scrollHeight, top: el.scrollTop };
+                void history.fetchNextPage();
+              }}
+            >
+              Tải tin nhắn cũ hơn
+            </Button>
+          )}
+          {history.isFetchNextPageError && (
+            <p role="alert">Chưa tải được tin nhắn cũ. Hãy thử lại.</p>
+          )}
+          {history.isSuccess && shown.length === 0 && !turn?.userMessageId && (
+            <div className="chat-welcome">
+              <span className="chat-welcome-icon">
+                <MessageCircle size={25} />
+              </span>
+              <h2>Bắt đầu từ một câu hỏi</h2>
+              <p>Đặt câu hỏi để khám phá thông tin trong tài liệu của bạn.</p>
+              <div className="chat-suggestions">
+                <span>Những điểm chính trong tài liệu là gì?</span>
+                <span>Hãy tóm tắt các nội dung quan trọng.</span>
+              </div>
+            </div>
+          )}
+          <div className="chat-message-list">
+            {displayMessages.map((item) => (
+              <MessageBubble
+                key={item.id}
+                item={item}
+                onSelect={(next, trigger) => {
+                  triggerRef.current = trigger;
+                  setSelection(next);
+                }}
+              />
+            ))}
+            {(turn?.phase === 'streaming' || (turn?.phase === 'reconciling' && turn.partial)) && (
+              <p className="chat-message-status" role="status">
+                Nội dung đang nhận là bản tạm, chưa kiểm tra trích dẫn.
+              </p>
+            )}
+          </div>
+        </div>
+        {showLatest && (
+          <Button
+            className="chat-scroll-latest"
+            variant="secondary"
+            onClick={() => {
+              if (viewport.current) viewport.current.scrollTop = viewport.current.scrollHeight;
+            }}
+          >
+            Xuống tin nhắn mới
+          </Button>
+        )}
+      </div>
+      {!narrow && selectedSource && (
+        <aside
+          ref={panelRef}
+          tabIndex={-1}
+          className="citation-panel-desktop"
+          aria-label="Chi tiết nguồn trích dẫn"
+        >
+          <CitationPanel
+            key={`${selection?.messageId}:${selection?.sourceId}:${selectedSource.availability}`}
+            source={selectedSource}
+            onClose={closeSource}
+          />
+        </aside>
       )}
+      <Sheet
+        open={narrow && !!selectedSource}
+        onOpenChange={(open) => {
+          if (!open) closeSource();
+        }}
+        title="Nguồn trích dẫn"
+        description="Xem vị trí và trích đoạn của nguồn trong câu trả lời."
+        side="bottom"
+      >
+        {selectedSource && (
+          <CitationPanel
+            key={`${selection?.messageId}:${selection?.sourceId}:${selectedSource.availability}`}
+            source={selectedSource}
+            onClose={closeSource}
+            showClose={false}
+          />
+        )}
+      </Sheet>
     </div>
   );
 }
@@ -743,6 +817,7 @@ export default function ChatPage() {
           {sidebar}
         </Sheet>
         <div className="chat-main">
+          <h1 className="sr-only">Hội thoại</h1>
           <header className="chat-header">
             <Button
               className="chat-drawer-button"
@@ -774,13 +849,13 @@ export default function ChatPage() {
           {conversationId ? (
             <>
               <History
-                key={`${userId}:${conversationId}`}
+                key={`history:${userId}:${conversationId}`}
                 userId={userId}
                 id={conversationId}
                 turn={turn}
               />
               <ChatComposer
-                key={`${userId}:${conversationId}`}
+                key={`composer:${userId}:${conversationId}`}
                 userId={userId}
                 id={conversationId}
                 turn={turn}

@@ -63,6 +63,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <Link
           className={`shell-nav-link ${isChat ? 'shell-nav-link--active' : ''}`}
           to="/app/chat"
+          aria-label="Hội thoại"
+          title="Hội thoại"
           aria-current={isChat ? 'page' : undefined}
           onClick={onNavigate}
         >
