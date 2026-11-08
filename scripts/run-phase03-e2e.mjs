@@ -9,7 +9,8 @@ import { createServer as createViteServer } from 'vite';
 
 const root = process.cwd();
 const phase = process.argv[2] ?? 'phase03';
-if (!['phase03', 'phase04', 'phase05'].includes(phase)) throw new Error('Unsupported test phase');
+if (!['phase03', 'phase04', 'phase05', 'phase06'].includes(phase))
+  throw new Error('Unsupported test phase');
 const container = 'local_postgres';
 const dbName = `documind_fe_e2e_${randomBytes(8).toString('hex')}`;
 const nonce = randomBytes(32).toString('hex');
@@ -166,11 +167,13 @@ try {
     [
       resolve(root, 'node_modules/@playwright/test/cli.js'),
       'test',
-      phase === 'phase05'
-        ? 'e2e/documents-phase05.spec.ts'
-        : phase === 'phase04'
-          ? 'e2e/auth-phase04.spec.ts'
-          : 'e2e/api-phase03.spec.ts',
+      phase === 'phase06'
+        ? 'e2e/conversations-phase06.spec.ts'
+        : phase === 'phase05'
+          ? 'e2e/documents-phase05.spec.ts'
+          : phase === 'phase04'
+            ? 'e2e/auth-phase04.spec.ts'
+            : 'e2e/api-phase03.spec.ts',
       '--workers=1',
       ...(process.env.DOCUMIND_E2E_GREP ? ['--grep', process.env.DOCUMIND_E2E_GREP] : []),
     ],
@@ -181,6 +184,7 @@ try {
       env: {
         ...process.env,
         DOCUMIND_E2E_BASE_URL: frontendUrl,
+        DOCUMIND_E2E_DB_NAME: dbName,
         DOCUMIND_E2E_HARNESS_NONCE: nonce,
       },
     },

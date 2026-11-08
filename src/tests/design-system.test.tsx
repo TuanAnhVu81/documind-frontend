@@ -142,8 +142,9 @@ describe('hệ thống thiết kế', () => {
         </ThemeProvider>
       </MemoryRouter>,
     );
-    const item = screen.getByRole('img', { name: 'Hội thoại — Sắp có' });
-    expect(item).toHaveAttribute('title', 'Hội thoại — Sắp có');
+    const item = screen.getByRole('img', { name: 'Thống kê — Sắp có' });
+    expect(item).toHaveAttribute('title', 'Thống kê — Sắp có');
+    expect(screen.getByRole('link', { name: 'Hội thoại' })).toHaveAttribute('href', '/app/chat');
   });
 
   it('giữ nhãn và trạng thái lỗi cho các trường nhập', () => {

@@ -13,6 +13,7 @@ export const queryKeys = {
     [...queryKeys.conversations(userId), 'list', page] as const,
   messages: (userId: string, id: string) =>
     [...queryKeys.conversations(userId), id, 'messages'] as const,
+  conversationDraft: (userId: string, id: string) => ['user', userId, 'chat-drafts', id] as const,
   usage: (userId: string) => ['user', userId, 'usage'] as const,
 };
 export const queryClient = new QueryClient({

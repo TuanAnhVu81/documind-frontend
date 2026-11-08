@@ -23,13 +23,13 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { useAuth } from '@/features/auth/use-auth';
 
 const futureNavigation = [
-  { label: 'Hội thoại', icon: MessageSquareText },
   { label: 'Thống kê', icon: ChartNoAxesCombined },
   { label: 'Cài đặt', icon: Settings2 },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const isDocuments = useLocation().pathname.startsWith('/app/documents');
+  const isChat = useLocation().pathname.startsWith('/app/chat');
   return (
     <>
       <Link
@@ -51,14 +51,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="shell-nav" aria-label="Điều hướng chính">
         <p className="shell-nav-label">KHÔNG GIAN LÀM VIỆC</p>
         <Link
-          className={`shell-nav-link ${!isDocuments ? 'shell-nav-link--active' : ''}`}
+          className={`shell-nav-link ${!isDocuments && !isChat ? 'shell-nav-link--active' : ''}`}
           to="/app"
-          aria-current={!isDocuments ? 'page' : undefined}
+          aria-current={!isDocuments && !isChat ? 'page' : undefined}
           aria-label="Tổng quan"
           onClick={onNavigate}
         >
           <LayoutGrid size={18} aria-hidden="true" />
           <span>Tổng quan</span>
+        </Link>
+        <Link
+          className={`shell-nav-link ${isChat ? 'shell-nav-link--active' : ''}`}
+          to="/app/chat"
+          aria-current={isChat ? 'page' : undefined}
+          onClick={onNavigate}
+        >
+          <MessageSquareText size={18} aria-hidden="true" />
+          <span>Hội thoại</span>
         </Link>
         <Link
           className={`shell-nav-link ${isDocuments ? 'shell-nav-link--active' : ''}`}
@@ -108,6 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { theme, toggleTheme } = useTheme();
   const auth = useAuth();
   const isDocuments = useLocation().pathname.startsWith('/app/documents');
+  const isChat = useLocation().pathname.startsWith('/app/chat');
 
   function handleDrawer(open: boolean) {
     setDrawerOpen(open);
@@ -170,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="shell-breadcrumb">
               <span>KHÔNG GIAN</span>
               <span className="breadcrumb-divider">/</span>
-              <strong>{isDocuments ? 'Tài liệu' : 'Tổng quan'}</strong>
+              <strong>{isDocuments ? 'Tài liệu' : isChat ? 'Hội thoại' : 'Tổng quan'}</strong>
             </div>
           </div>
           <div className="shell-header-actions">
