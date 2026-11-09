@@ -132,7 +132,7 @@ describe('hệ thống thiết kế', () => {
     expect(screen.getByRole('dialog', { name: 'Nguồn' })).toHaveClass('ui-dialog--bottom');
   });
 
-  it('cung cấp tên và gợi ý cho các mục điều hướng chưa khả dụng', () => {
+  it('cung cấp tên truy cập và liên kết điều hướng hội thoại, thống kê, cài đặt', () => {
     render(
       <MemoryRouter>
         <ThemeProvider>
@@ -142,8 +142,8 @@ describe('hệ thống thiết kế', () => {
         </ThemeProvider>
       </MemoryRouter>,
     );
-    const item = screen.getByRole('img', { name: 'Thống kê — Sắp có' });
-    expect(item).toHaveAttribute('title', 'Thống kê — Sắp có');
+    expect(screen.getByRole('link', { name: 'Thống kê' })).toHaveAttribute('href', '/app/usage');
+    expect(screen.getByRole('link', { name: 'Cài đặt' })).toHaveAttribute('href', '/app/settings');
     expect(screen.getByRole('link', { name: 'Hội thoại' })).toHaveAttribute('href', '/app/chat');
   });
 

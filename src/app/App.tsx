@@ -13,6 +13,8 @@ import { DocumentsSync } from '@/features/documents/DocumentsSync';
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const DocumentsPage = lazy(() => import('@/features/documents/DocumentsPage'));
 const ChatPage = lazy(() => import('@/features/conversations/ChatPage'));
+const UsagePage = lazy(() => import('@/features/usage/UsagePage'));
+const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 const AuthPage = lazy(() =>
   import('@/pages/AuthPage').then((module) => ({ default: module.AuthPage })),
@@ -72,6 +74,22 @@ export function App() {
                       }
                     />
                     <Route path="/login" element={<AuthPage mode="login" />} />
+                    <Route
+                      path="/app/usage"
+                      element={
+                        <ProtectedPage>
+                          <UsagePage />
+                        </ProtectedPage>
+                      }
+                    />
+                    <Route
+                      path="/app/settings"
+                      element={
+                        <ProtectedPage>
+                          <SettingsPage />
+                        </ProtectedPage>
+                      }
+                    />
                     <Route
                       path="/app/chat"
                       element={
