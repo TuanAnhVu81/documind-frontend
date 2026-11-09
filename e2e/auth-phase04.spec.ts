@@ -15,6 +15,10 @@ test.beforeEach(async ({ page }) => {
 test('đăng ký, đăng nhập, reload hai tab và đăng xuất', async ({ page, context }) => {
   await page.goto(`${baseUrl}/app`);
   await expect(page.getByRole('heading', { name: 'Đăng nhập' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Về trang chủ' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Tạo tài khoản' }).click();
+  await page.getByRole('link', { name: 'Về đăng nhập' }).click();
+  await expect(page.getByRole('heading', { name: 'Đăng nhập' })).toBeVisible();
   await page.getByRole('link', { name: 'Tạo tài khoản' }).click();
   const email = `phase04-${crypto.randomUUID()}@example.test`;
   const password = `Demo-${crypto.randomUUID()}!`;

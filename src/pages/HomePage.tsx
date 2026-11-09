@@ -11,7 +11,6 @@ import {
 import { AppShell } from '@/components/layout/AppShell';
 import { BackendStatus } from '@/components/feedback/BackendStatus';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { useBackendConnection } from '@/features/system/useBackendConnection';
 import { Link } from 'react-router';
 
@@ -46,9 +45,7 @@ export default function HomePage() {
             <p className="page-eyebrow">
               <Sparkles size={14} aria-hidden="true" /> KHÔNG GIAN CỦA BẠN
             </p>
-            <h1>
-              Chào mừng đến DocuMind<span className="heading-dot">.</span>
-            </h1>
+            <h1>Chào mừng đến DocuMind</h1>
             <p>Một nơi yên tĩnh để đọc, tìm hiểu và kết nối với tài liệu của bạn.</p>
           </div>
           <Badge tone="info">
@@ -64,19 +61,19 @@ export default function HomePage() {
             <h2 id="hero-title">
               Từ tài liệu đến
               <br />
-              <span>điều bạn cần biết.</span>
+              <span>điều bạn cần biết</span>
             </h2>
             <p>Đặt câu hỏi, khám phá thông tin và quay lại đúng đoạn tài liệu liên quan.</p>
             <div className="hero-actions">
               <Link className="ui-button ui-button--primary ui-button--medium" to="/app/documents">
                 <FilePlus2 size={17} aria-hidden="true" /> Tải tài liệu
               </Link>
-              <Button variant="secondary" disabled>
+              <Link className="ui-button ui-button--secondary ui-button--medium" to="/app/chat">
                 <MessageSquareText size={17} aria-hidden="true" /> Bắt đầu hội thoại
-              </Button>
+              </Link>
             </div>
             <p className="availability-note">
-              Tải tài liệu lên để bắt đầu. Hội thoại sẽ khả dụng ở bước tiếp theo.
+              Tải tài liệu lên, sau đó tạo hội thoại để đặt câu hỏi.
             </p>
           </div>
           <div className="hero-art" aria-hidden="true">
@@ -141,7 +138,7 @@ export default function HomePage() {
               <h2>
                 Đừng chỉ tìm câu trả lời.
                 <br />
-                Hãy tìm cả nguồn.
+                Hãy tìm cả nguồn
               </h2>
               <p>Thông tin sẽ dễ tin cậy hơn khi bạn có thể xem lại tài liệu liên quan.</p>
               <div className="aside-divider" />

@@ -23,7 +23,7 @@ test('usage và cài đặt dùng BE thật, số liệu demo cách ly và khôn
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await page.getByRole('link', { name: 'Thống kê', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Thống kê sử dụng.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Thống kê sử dụng' })).toBeVisible();
   await expect(page.getByText('Chưa có hoạt động được ghi nhận')).toBeVisible();
   await expect(
     page.locator('.usage-card').filter({ hasText: 'Lượt hỏi' }).locator('strong'),
@@ -79,7 +79,7 @@ test('usage và cài đặt dùng BE thật, số liệu demo cách ly và khôn
     .getByRole('dialog', { name: 'Điều hướng' })
     .getByRole('link', { name: 'Cài đặt' })
     .click();
-  await expect(page.getByRole('heading', { name: 'Cài đặt.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cài đặt' })).toBeVisible();
   await expect(page.locator('.settings-profile').getByText(email)).toBeVisible();
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
   await page.getByLabel('Theo hệ thống').check();

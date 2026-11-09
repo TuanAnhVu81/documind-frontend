@@ -32,16 +32,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         className="shell-brand"
         to="/app"
-        aria-label="DocuMind. KHÔNG GIAN TÀI LIỆU"
+        aria-label="DocuMind - KHÔNG GIAN TÀI LIỆU"
         onClick={onNavigate}
       >
         <span className="shell-brand-mark">
           <BookOpenText size={21} aria-hidden="true" />
         </span>
         <span className="shell-brand-copy">
-          <strong>
-            DocuMind<span>.</span>
-          </strong>
+          <strong>DocuMind</strong>
           <small>KHÔNG GIAN TÀI LIỆU</small>
         </span>
       </Link>

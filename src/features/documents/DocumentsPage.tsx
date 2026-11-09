@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router';
 import { FilePlus2, FileText, FolderOpen, Search, Trash2, UploadCloud, X } from 'lucide-react';
 import { ApiError } from '@/api/errors';
 import { documentsApi } from '@/api/documents';
@@ -387,9 +388,7 @@ export default function DocumentsPage() {
         <div className="library-heading">
           <div>
             <p className="section-kicker">KHÔNG GIAN CỦA BẠN</p>
-            <h1>
-              Thư viện tài liệu<span className="heading-dot">.</span>
-            </h1>
+            <h1>Thư viện tài liệu</h1>
             <p>Quản lý tài liệu và theo dõi trạng thái xử lý tại một nơi.</p>
           </div>
           <Button onClick={() => input.current?.click()} disabled={busy}>
@@ -720,19 +719,15 @@ export default function DocumentsPage() {
                 </div>
               ) : (
                 <div className="detail-actions">
-                  <Button
-                    variant="secondary"
-                    disabled
-                    title="Hội thoại sẽ khả dụng ở bước tiếp theo"
-                  >
-                    Bắt đầu hội thoại · Sắp có
-                  </Button>
+                  <Link className="ui-button ui-button--secondary ui-button--medium" to="/app/chat">
+                    Mở hội thoại
+                  </Link>
                   <Button variant="danger" onClick={() => setConfirmDelete(true)}>
                     <Trash2 size={16} aria-hidden="true" /> Xóa tài liệu
                   </Button>
                 </div>
               )}
-              <p className="detail-note">Xem trước tệp gốc chưa khả dụng.</p>
+              <p className="detail-note">Chọn tài liệu trong hội thoại khi đặt câu hỏi. Xem trước tệp gốc chưa khả dụng.</p>
             </div>
           )
         )}

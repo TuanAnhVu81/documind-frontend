@@ -65,12 +65,12 @@ export function AuthPage({ mode }: Props) {
   return (
     <main className="auth-page">
       <section className="auth-aside" aria-label="Giới thiệu DocuMind">
-        <Link to="/" className="auth-brand">
+        <div className="auth-brand">
           <span>
             <BookOpenText size={22} />
           </span>{' '}
-          DocuMind<span className="auth-brand-dot">.</span>
-        </Link>
+          DocuMind
+        </div>
         <div className="auth-aside-content">
           <div className="auth-kicker">
             <Sparkles size={15} /> KHÔNG GIAN TRI THỨC CỦA BẠN
@@ -78,7 +78,7 @@ export function AuthPage({ mode }: Props) {
           <h2>
             Hiểu tài liệu.
             <br />
-            <em>Rõ từng câu trả lời.</em>
+            <em>Rõ từng câu trả lời</em>
           </h2>
           <p>Một không gian riêng để đọc, đặt câu hỏi và tìm về đúng nguồn thông tin bạn cần.</p>
           <div className="auth-feature">
@@ -102,11 +102,13 @@ export function AuthPage({ mode }: Props) {
       </section>
       <section className="auth-main" aria-labelledby="auth-title">
         <div className="auth-card">
-          <Link to="/" className="auth-back">
-            <ArrowLeft size={16} /> Về trang chủ
-          </Link>
+          {!isLogin && (
+            <Link to="/login" className="auth-back" state={{ from: destination }}>
+              <ArrowLeft size={16} /> Về đăng nhập
+            </Link>
+          )}
           <div className="auth-mobile-brand">
-            <BookOpenText size={20} /> DocuMind<span>.</span>
+            <BookOpenText size={20} /> DocuMind
           </div>
           <p className="auth-eyebrow">{isLogin ? 'CHÀO MỪNG TRỞ LẠI' : 'BẮT ĐẦU CÙNG DOCUMIND'}</p>
           <h1 id="auth-title">{isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}</h1>

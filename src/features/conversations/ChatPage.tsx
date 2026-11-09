@@ -541,7 +541,7 @@ function ChatComposer({
           event.target.style.height = `${Math.min(event.target.scrollHeight, 160)}px`;
         }}
         onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+          if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing) {
             event.preventDefault();
             submit();
           }
@@ -551,7 +551,7 @@ function ChatComposer({
       <div className="chat-compose-footer">
         <span>
           {validation ||
-            `${Array.from(draft).length}/4.000 ký tự · Enter để gửi, Shift+Enter xuống dòng`}
+            `${Array.from(draft).length}/4.000 ký tự · Enter xuống dòng, Ctrl+Enter hoặc ⌘+Enter để gửi`}
         </span>
         {turn?.phase === 'sending' || turn?.phase === 'streaming' ? (
           <Button variant="secondary" onClick={() => stopTurn(userId, id)}>
@@ -571,7 +571,8 @@ function ChatComposer({
       {turn?.notice && (
         <div className="chat-turn-notice" role="status">
           {turn.notice}{' '}
-          {cooldown && `Thử lại sau ${Math.ceil((turn.retryUntil! - clock) / 1000)} giây.`}{' '}
+          {cooldown && <span aria-hidden="true">Thử lại sau {Math.ceil((turn.retryUntil! - clock) / 1000)} giây. </span>}
+          {cooldown && <span className="sr-only">Vui lòng đợi trước khi thử lại. </span>}
           {turn.requestId && `Mã yêu cầu: ${turn.requestId}`}{' '}
           {turn.canRetrySame && (
             <Button variant="secondary" onClick={() => retrySameTurn(userId, id)}>

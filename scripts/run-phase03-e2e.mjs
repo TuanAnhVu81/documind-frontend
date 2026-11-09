@@ -9,7 +9,7 @@ import { createServer as createViteServer } from 'vite';
 
 const root = process.cwd();
 const phase = process.argv[2] ?? 'phase03';
-if (!['phase03', 'phase04', 'phase05', 'phase06', 'phase07', 'phase08', 'phase09'].includes(phase))
+if (!['phase03', 'phase04', 'phase05', 'phase06', 'phase07', 'phase08', 'phase09', 'phase10'].includes(phase))
   throw new Error('Unsupported test phase');
 const container = 'local_postgres';
 const dbName = `documind_fe_e2e_${randomBytes(8).toString('hex')}`;
@@ -167,7 +167,9 @@ try {
     [
       resolve(root, 'node_modules/@playwright/test/cli.js'),
       'test',
-      phase === 'phase09'
+      phase === 'phase10'
+        ? 'e2e/polish-phase10.spec.ts'
+        : phase === 'phase09'
         ? 'e2e/usage-settings-phase09.spec.ts'
         : phase === 'phase08'
           ? 'e2e/citations-phase08.spec.ts'

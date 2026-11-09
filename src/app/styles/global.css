@@ -81,6 +81,12 @@
 body {
   margin: 0;
   min-width: 320px;
+  line-height: var(--line-height-body);
+}
+h1,
+h2,
+h3 {
+  font-weight: 700;
 }
 button,
 input,
@@ -520,10 +526,6 @@ a {
   font-weight: 750;
   letter-spacing: -0.06em;
 }
-.shell-brand-copy strong span,
-.heading-dot {
-  color: var(--accent);
-}
 .shell-brand-copy small {
   color: var(--text-subtle);
   font-size: 8px;
@@ -751,8 +753,8 @@ a {
   margin: 11px 0 7px;
   font-size: clamp(25px, 2.4vw, 34px);
   line-height: 1.25;
-  letter-spacing: -0.045em;
-  font-weight: 750;
+  letter-spacing: -0.025em;
+  font-weight: 700;
 }
 .page-heading > div > p:last-child {
   margin: 0;
@@ -793,8 +795,8 @@ a {
   margin: 21px 0 13px;
   font-size: clamp(28px, 3.2vw, 42px);
   line-height: 1.25;
-  font-weight: 750;
-  letter-spacing: -0.055em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 .hero-copy h2 span {
   color: var(--accent-ink);
@@ -933,8 +935,8 @@ a {
 .section-heading h2 {
   margin: 8px 0 6px;
   font-size: 19px;
-  letter-spacing: -0.035em;
-  font-weight: 730;
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
 .section-heading div > p:last-child {
   margin: 0;
@@ -1319,11 +1321,6 @@ a {
   background: #759cff;
   color: #13264a;
 }
-.auth-brand-dot,
-.auth-mobile-brand span {
-  color: #94b4ff;
-  margin-left: -8px;
-}
 .auth-aside-content {
   position: relative;
   z-index: 1;
@@ -1344,7 +1341,7 @@ a {
   margin: 24px 0 18px;
   font-size: clamp(35px, 3.5vw, 51px);
   line-height: 1.24;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
 }
 .auth-aside h2 em {
   color: #b2c7ff;
@@ -1569,7 +1566,7 @@ a {
 .library-heading h1 {
   margin: 8px 0;
   font-size: clamp(27px, 3vw, 36px);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
 }
 .library-heading p:not(.section-kicker),
 .library-toolbar p:not(.section-kicker) {
@@ -2061,7 +2058,7 @@ a {
 }
 .chat-markdown {
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.8;
 }
 .chat-markdown p:last-child {
   margin-bottom: 0;
@@ -2194,6 +2191,9 @@ a {
 @media (max-width: 900px) {
   .chat-layout {
     grid-template-columns: minmax(0, 1fr);
+    height: max(320px, calc(100dvh - 145px));
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
   }
   .chat-sidebar {
     display: none;
@@ -2202,7 +2202,11 @@ a {
     display: inline-flex;
   }
   .chat-main {
-    min-height: 620px;
+    min-height: 0;
+  }
+  .chat-history,
+  .chat-history-container {
+    min-height: 0;
   }
 }
 @media (max-width: 600px) {
@@ -2217,10 +2221,19 @@ a {
   }
   .chat-composer {
     width: calc(100% - 28px);
-    margin-bottom: 14px;
+    margin-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+  .chat-composer textarea {
+    font-size: 16px;
   }
   .chat-compose-footer span {
     max-width: 190px;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ui-button:not(:disabled):active {
+    transform: translateY(1px);
   }
 }
 .chat-unavailable-selection {
@@ -2437,6 +2450,23 @@ a {
   display: block;
 }
 
+@media (max-width: 900px) {
+  .chat-main {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .chat-header,
+  .chat-composer {
+    flex-shrink: 0;
+  }
+  .chat-history-layout,
+  .chat-history-container,
+  .chat-history-container .chat-history {
+    min-height: 0;
+  }
+}
+
 /* Usage and account settings */
 .account-page {
   max-width: 1100px;
@@ -2452,7 +2482,7 @@ a {
 .account-page-heading h1 {
   margin: 8px 0;
   font-size: clamp(27px, 3vw, 36px);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
 }
 .account-page-heading > div > p:last-child {
   margin: 0;
@@ -2698,6 +2728,7 @@ a {
   border: 0;
   padding: 0;
   margin: 24px 0 0;
+  color: var(--text);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;

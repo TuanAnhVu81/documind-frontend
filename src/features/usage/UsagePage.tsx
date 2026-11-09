@@ -142,9 +142,7 @@ export default function UsagePage() {
             <p className="page-eyebrow">
               <Activity size={14} aria-hidden="true" /> SỐ LIỆU CỦA BẠN
             </p>
-            <h1>
-              Thống kê sử dụng<span className="heading-dot">.</span>
-            </h1>
+            <h1>Thống kê sử dụng</h1>
             <p>Theo dõi hoạt động và tài nguyên đã sử dụng trong không gian của bạn.</p>
           </div>
           <Button

@@ -33,7 +33,7 @@ test('SSE NO_EVIDENCE và replay dùng BE thật, không gọi Gemini', async ({
       request.method() === 'POST' && request.url().endsWith(`/conversations/${id}/messages`),
   );
   await page.getByLabel('Câu hỏi của bạn').fill(question);
-  await page.getByLabel('Câu hỏi của bạn').press('Enter');
+  await page.getByLabel('Câu hỏi của bạn').press('Control+Enter');
   const request = await requestPromise;
   const key = request.headers()['idempotency-key'];
   expect(key).toMatch(/^[0-9a-f-]{36}$/);

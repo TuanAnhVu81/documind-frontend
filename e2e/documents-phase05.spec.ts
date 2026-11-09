@@ -95,7 +95,7 @@ test('tải tài liệu thật, kiểm tra lỗi và xóa đến 404', async ({ 
   const dialog = page.getByRole('dialog', { name: 'Chi tiết tài liệu' });
   await expect(dialog.getByText('Tài liệu thử nghiệm.txt')).toBeVisible();
   await expect(dialog.getByText('0 / 3')).toBeVisible();
-  await expect(dialog.getByRole('button', { name: /Bắt đầu hội thoại/ })).toBeDisabled();
+  await expect(dialog.getByRole('link', { name: 'Mở hội thoại' })).toHaveAttribute('href', '/app/chat');
   await dialog.getByRole('button', { name: 'Xóa tài liệu' }).click();
   await expect(dialog.getByText(/Nội dung hội thoại cũ vẫn được giữ/)).toBeVisible();
   const deleteResponse = page.waitForResponse(

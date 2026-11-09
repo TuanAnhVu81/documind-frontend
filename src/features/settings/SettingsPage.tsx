@@ -35,9 +35,7 @@ export default function SettingsPage() {
             <p className="page-eyebrow">
               <ShieldCheck size={14} aria-hidden="true" /> KHÔNG GIAN CÁ NHÂN
             </p>
-            <h1>
-              Cài đặt<span className="heading-dot">.</span>
-            </h1>
+            <h1>Cài đặt</h1>
             <p>Điều chỉnh trải nghiệm và quản lý phiên của bạn.</p>
           </div>
         </div>
