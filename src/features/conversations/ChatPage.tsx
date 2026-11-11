@@ -530,7 +530,7 @@ function ChatComposer({
       </label>
       <textarea
         id="chat-draft"
-        rows={2}
+        rows={1}
         value={draft}
         onChange={(event) => {
           const content = Array.from(event.target.value).slice(0, 4000).join('');

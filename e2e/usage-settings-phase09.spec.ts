@@ -60,11 +60,9 @@ test('usage và cài đặt dùng BE thật, số liệu demo cách ly và khôn
   await expect(
     page.locator('.usage-card').filter({ hasText: 'Token đầu ra' }).locator('strong'),
   ).toHaveText('20');
-  await expect(
-    page.locator('.usage-card').filter({ hasText: 'Token embedding' }).locator('strong'),
-  ).toHaveText('200');
+  await expect(page.getByText('Token embedding')).toHaveCount(0);
   await expect(page.getByText('Có số liệu ước tính')).toBeVisible();
-  await expect(page.locator('.usage-cost strong')).toHaveText('Chưa có số liệu');
+  await expect(page.getByText('Chi phí ước tính')).toHaveCount(0);
   await page.context().setOffline(true);
   await page.getByRole('button', { name: 'Làm mới' }).click();
   await expect(page.getByRole('heading', { name: 'Chưa tải được thống kê' })).toBeVisible();

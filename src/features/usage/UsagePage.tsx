@@ -4,8 +4,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarDays,
-  CircleDollarSign,
-  Layers3,
   MessageSquareText,
   RefreshCw,
 } from 'lucide-react';
@@ -18,7 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { ErrorState, Skeleton } from '@/components/ui/Feedback';
 import { useAuth } from '@/features/auth/use-auth';
 import { accessTokenForUser } from '@/features/auth/user-token';
-import { formatCost, formatTokens, formatUsageTime } from './usage-format';
+import { formatTokens, formatUsageTime } from './usage-format';
 
 function UsageSummary({ usage }: { usage: Usage }) {
   const stats = [
@@ -39,12 +37,6 @@ function UsageSummary({ usage }: { usage: Usage }) {
       value: formatTokens(usage.completionTokens),
       detail: 'Câu trả lời và các lần xử lý liên quan.',
       icon: ArrowDownLeft,
-    },
-    {
-      label: 'Token embedding',
-      value: formatTokens(usage.embeddingTokens),
-      detail: 'Xử lý tài liệu và truy vấn khi có ghi nhận.',
-      icon: Layers3,
     },
   ];
   const empty =
@@ -99,21 +91,16 @@ function UsageSummary({ usage }: { usage: Usage }) {
           ))}
         </div>
       </section>
-      <section className="usage-cost" aria-labelledby="usage-cost-title">
-        <div className="usage-cost-icon">
-          <CircleDollarSign size={22} aria-hidden="true" />
-        </div>
-        <div>
-          <p className="section-kicker">CHI PHÍ</p>
-          <h2 id="usage-cost-title">Chi phí ước tính</h2>
-          <p>Dữ liệu do hệ thống ghi nhận; không phải hóa đơn từ nhà cung cấp.</p>
-        </div>
-        <strong>{formatCost(usage.estimatedCostUsd)}</strong>
-      </section>
       <p className="usage-footnote">
         {usage.estimated ? 'Một phần số liệu là ước tính. ' : ''}“Chưa có số liệu” nghĩa là chưa xác
         định được tổng, khác với 0. Số liệu bao gồm cả hoạt động đã xóa khỏi lịch sử nếu được lưu
         lại.
+      </p>
+      <p className="usage-footnote">
+        Quản trị viên có thể xem hạn mức Gemini của dự án trong{' '}
+        <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer">
+          Google AI Studio
+        </a>.
       </p>
     </>
   );
