@@ -650,6 +650,9 @@ a {
 .mobile-menu-button {
   display: none;
 }
+.shell-navigation-toggle {
+  display: none;
+}
 .header-separator {
   width: 1px;
   height: 30px;
@@ -2016,6 +2019,9 @@ a {
 .chat-drawer-button {
   display: none;
 }
+.chat-list-toggle {
+  display: none;
+}
 .chat-history {
   flex: 1;
   height: 0;
@@ -2212,6 +2218,63 @@ a {
     min-height: 0;
   }
 }
+
+/* Give the conversation workspace more room without hiding its controls. */
+.shell-main--chat {
+  padding: 12px;
+}
+@media (min-width: 768px) {
+  .shell-navigation-toggle {
+    display: inline-flex;
+  }
+  .app-shell--navigation-collapsed .shell-sidebar {
+    display: none;
+  }
+}
+@media (min-width: 901px) {
+  .chat-layout {
+    height: max(480px, calc(100dvh - 102px));
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .chat-layout--list-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chat-layout--list-collapsed .chat-sidebar {
+    display: none;
+  }
+  .chat-list-toggle {
+    display: inline-flex;
+  }
+  .chat-main {
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  .chat-history-layout,
+  .chat-history-container,
+  .chat-history-container .chat-history {
+    min-height: 0;
+  }
+  .chat-sidebar,
+  .citation-panel-desktop {
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+@media (max-width: 900px) {
+  .shell-main--chat {
+    padding: 8px;
+  }
+  .chat-layout {
+    height: max(320px, calc(100dvh - 94px));
+  }
+}
+@media (max-width: 767px) {
+  .chat-layout {
+    height: max(320px, calc(100dvh - 84px));
+  }
+}
 @media (max-width: 600px) {
   .chat-header {
     padding: 14px;
@@ -2398,7 +2461,7 @@ a {
 /* Keep the history, source panel and composer within the desktop workspace. */
 @media (min-width: 1101px) {
   .chat-layout {
-    height: max(620px, min(720px, calc(100dvh - 200px)));
+    height: max(480px, calc(100dvh - 102px));
     min-height: 0;
     grid-template-rows: minmax(0, 1fr);
   }

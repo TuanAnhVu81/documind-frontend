@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   MessageCircle,
   Plus,
   Send,
@@ -647,6 +649,7 @@ export default function ChatPage() {
   });
   const turn = turnQuery.data ?? undefined;
   const [drawer, setDrawer] = useState(false);
+  const [listCollapsed, setListCollapsed] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -806,8 +809,8 @@ export default function ChatPage() {
   );
   return (
     <AppShell>
-      <section className="chat-layout" aria-label="Không gian hội thoại">
-        <aside className="chat-sidebar">{sidebar}</aside>
+      <section className={`chat-layout${listCollapsed ? ' chat-layout--list-collapsed' : ''}`} aria-label="Không gian hội thoại">
+        <aside id="desktop-conversations" className="chat-sidebar">{sidebar}</aside>
         <Sheet
           open={drawer}
           onOpenChange={setDrawer}
@@ -820,6 +823,18 @@ export default function ChatPage() {
         <div className="chat-main">
           <h1 className="sr-only">Hội thoại</h1>
           <header className="chat-header">
+            <Button
+              className="chat-list-toggle"
+              size="icon"
+              variant="ghost"
+              aria-label={listCollapsed ? 'Hiện danh sách hội thoại' : 'Ẩn danh sách hội thoại'}
+              title={listCollapsed ? 'Hiện danh sách hội thoại' : 'Ẩn danh sách hội thoại'}
+              aria-expanded={!listCollapsed}
+              aria-controls="desktop-conversations"
+              onClick={() => setListCollapsed((collapsed) => !collapsed)}
+            >
+              {listCollapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
+            </Button>
             <Button
               className="chat-drawer-button"
               size="icon"

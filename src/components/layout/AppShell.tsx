@@ -9,6 +9,8 @@ import {
   Menu,
   MessageSquareText,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings2,
   ShieldCheck,
   Sun,
@@ -118,6 +120,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [navigationCollapsed, setNavigationCollapsed] = useState(false);
   const menuRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const { theme, toggleTheme } = useTheme();
@@ -154,11 +157,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [drawerOpen]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${isChat && navigationCollapsed ? ' app-shell--navigation-collapsed' : ''}`}>
       <a className="skip-link" href="#main-content">
         Đến nội dung chính
       </a>
-      <aside className="shell-sidebar" ref={sidebarRef}>
+      <aside id="desktop-navigation" className="shell-sidebar" ref={sidebarRef}>
         <SidebarContent />
       </aside>
       <Sheet
@@ -175,6 +178,20 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="shell-workspace">
         <header className="shell-header">
           <div className="shell-header-left">
+            {isChat && (
+              <Button
+                className="shell-navigation-toggle"
+                variant="ghost"
+                size="icon"
+                aria-label={navigationCollapsed ? 'Hiện thanh điều hướng' : 'Ẩn thanh điều hướng'}
+                title={navigationCollapsed ? 'Hiện thanh điều hướng' : 'Ẩn thanh điều hướng'}
+                aria-expanded={!navigationCollapsed}
+                aria-controls="desktop-navigation"
+                onClick={() => setNavigationCollapsed((collapsed) => !collapsed)}
+              >
+                {navigationCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+              </Button>
+            )}
             <Button
               ref={menuRef}
               className="mobile-menu-button"
@@ -248,7 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Dropdown>
           </div>
         </header>
-        <main id="main-content" className="shell-main">
+        <main id="main-content" className={`shell-main${isChat ? ' shell-main--chat' : ''}`}>
           {children}
         </main>
         <footer className="shell-footer">

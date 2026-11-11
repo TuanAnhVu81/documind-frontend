@@ -77,9 +77,17 @@ test('đọc nguồn từ BE thật theo message, desktop/mobile và xóa tài l
   await expect(panel.getByText('Trang 3')).toBeVisible();
   await expect(panel.getByText(/Doan demo thu nhat/)).toBeVisible();
   expect(await panel.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(true);
+  const initialWidth = await page.locator('.chat-history-container').evaluate((element) => element.clientWidth);
+  await page.getByRole('button', { name: 'Ẩn thanh điều hướng' }).click();
+  await page.getByRole('button', { name: 'Ẩn danh sách hội thoại' }).click();
+  await expect(page.getByRole('button', { name: 'Hiện thanh điều hướng' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('button', { name: 'Hiện danh sách hội thoại' })).toHaveAttribute('aria-expanded', 'false');
+  expect(await page.locator('.chat-history-container').evaluate((element) => element.clientWidth)).toBeGreaterThan(initialWidth);
+  await page.getByRole('button', { name: 'Hiện danh sách hội thoại' }).click();
+  await page.getByRole('button', { name: 'Hiện thanh điều hướng' }).click();
   expect(
     await page.locator('.chat-layout').evaluate((element) => element.clientHeight),
-  ).toBeLessThanOrEqual(722);
+  ).toBeLessThanOrEqual(900);
   await panel.getByRole('button', { name: 'Đóng nguồn trích dẫn' }).click();
   await expect(firstChip).toBeFocused();
   await page.setViewportSize({ width: 390, height: 844 });
