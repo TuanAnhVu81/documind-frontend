@@ -262,7 +262,7 @@ export default function DocumentsPage() {
           error instanceof ApiError &&
           (error.code === 'NETWORK_ERROR' ||
             error.code === 'TIMEOUT' ||
-            (error.status !== undefined && error.status >= 500));
+            (error.status !== undefined && error.status >= 500 && error.code !== 'STORAGE_CAPACITY_EXCEEDED'));
         setUploads((items) =>
           items.map((item) =>
             item.id === job.id

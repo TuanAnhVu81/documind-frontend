@@ -11,6 +11,7 @@
   IDEMPOTENCY_KEY_REUSED: 'Yêu cầu này không khớp với lần gửi trước.',
   INVALID_DOCUMENT_SCOPE: 'Phạm vi tài liệu không hợp lệ.',
   FILE_TOO_LARGE: 'Tệp vượt quá kích thước cho phép.',
+  STORAGE_CAPACITY_EXCEEDED: 'Không gian lưu trữ đã đầy. Vui lòng xóa bớt tài liệu và thử lại.',
   UNSUPPORTED_MEDIA_TYPE: 'Định dạng tệp không được hỗ trợ.',
   RATE_LIMITED: 'Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.',
 };
