@@ -26,6 +26,10 @@ test('đăng ký, đăng nhập, reload hai tab và đăng xuất', async ({ pag
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Hiện mật khẩu' }).click();
   await expect(page.getByLabel('Mật khẩu', { exact: true })).toHaveAttribute('type', 'text');
+  await page.getByLabel('Nhập lại mật khẩu').fill('khong-khop');
+  await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
+  await expect(page.getByText('Mật khẩu xác nhận không khớp.')).toBeVisible();
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await expect(
     page.getByText('Tạo tài khoản thành công. Hãy đăng nhập để tiếp tục.'),
@@ -55,6 +59,7 @@ test('mất mạng lúc logout không khôi phục phiên và cho thử lại', 
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await expect(page.getByRole('heading', { name: 'Đăng nhập' })).toBeVisible();
   await page.getByLabel('Email').fill(email);
@@ -80,6 +85,7 @@ test('refresh đến muộn sau logout không khôi phục phiên', async ({ pag
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await expect(page.getByRole('heading', { name: 'Đăng nhập' })).toBeVisible();
   await page.getByLabel('Email').fill(email);
@@ -126,6 +132,7 @@ test('đổi tài khoản giữa hai tab xóa cache tài khoản trước', asyn
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(firstEmail);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(firstEmail);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -166,6 +173,7 @@ test('hai tab xử lý REFRESH_RACE khi Web Locks không khả dụng', async ({
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -209,6 +217,7 @@ test('refresh token cũ dùng lại sau 5 giây đưa người dùng về màn �
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -246,6 +255,7 @@ test('thông điệp session từ trước logout không phục hồi phiên', a
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -293,6 +303,7 @@ test('logout xóa phiên tab khác ngay cả khi không có BroadcastChannel', a
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -333,6 +344,7 @@ test('logout chờ login đang gửi khi không có Web Locks và BroadcastChann
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);

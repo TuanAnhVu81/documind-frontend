@@ -16,7 +16,7 @@ import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAuth } from '@/features/auth/use-auth';
-import { credentialsSchema, type CredentialsForm } from '@/features/auth/validation';
+import { credentialsSchema, registrationSchema, type CredentialsForm } from '@/features/auth/validation';
 
 type Props = { mode: 'login' | 'register' };
 export function AuthPage({ mode }: Props) {
@@ -33,8 +33,8 @@ export function AuthPage({ mode }: Props) {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<CredentialsForm>({
-    resolver: zodResolver(credentialsSchema),
-    defaultValues: { email: '', password: '' },
+    resolver: zodResolver(isLogin ? credentialsSchema : registrationSchema),
+    defaultValues: { email: '', password: '', confirmPassword: '' },
   });
   const from = (location.state as { from?: string } | null)?.from;
   const destination = from && /^\/app(?:\/|\?|$)/.test(from) ? from : '/app';
@@ -50,7 +50,7 @@ export function AuthPage({ mode }: Props) {
         await auth.login(values);
         if (authManagerStatus() === 'authenticated') navigate(destination, { replace: true });
       } else {
-        await auth.register(values);
+        await auth.register({ email: values.email, password: values.password });
         navigate('/login', { replace: true, state: { registered: true, from: destination } });
       }
     } catch (failure) {
@@ -192,6 +192,25 @@ export function AuthPage({ mode }: Props) {
                 </p>
               )}
             </div>
+            {!isLogin && (
+              <div className="auth-field">
+                <label htmlFor="confirm-password">Nhập lại mật khẩu</label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Nhập lại mật khẩu"
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
+                  {...register('confirmPassword')}
+                />
+                {errors.confirmPassword && (
+                  <p id="confirm-password-error" className="auth-field-error" role="alert">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+            )}
             <Button
               type="submit"
               loading={isSubmitting}

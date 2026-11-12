@@ -19,6 +19,7 @@ test('tải tài liệu thật, kiểm tra lỗi và xóa đến 404', async ({ 
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -135,6 +136,7 @@ test('giao diện thư viện responsive và truy cập được bằng axe', as
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -159,6 +161,7 @@ async function signInLibrary(page: import('@playwright/test').Page) {
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);

@@ -17,4 +17,10 @@ export const credentialsSchema = z.object({
       'Mật khẩu không được vượt quá 72 byte UTF-8.',
     ),
 });
-export type CredentialsForm = z.infer<typeof credentialsSchema>;
+export const registrationSchema = credentialsSchema.extend({
+  confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu.'),
+}).refine((value) => value.password === value.confirmPassword, {
+  path: ['confirmPassword'],
+  message: 'Mật khẩu xác nhận không khớp.',
+});
+export type CredentialsForm = z.infer<typeof credentialsSchema> & { confirmPassword?: string };

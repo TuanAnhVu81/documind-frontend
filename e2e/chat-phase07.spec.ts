@@ -18,6 +18,7 @@ test('SSE NO_EVIDENCE và replay dùng BE thật, không gọi Gemini', async ({
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -95,6 +96,7 @@ test('mất phản hồi rồi reload vẫn replay với cùng idempotency key',
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);

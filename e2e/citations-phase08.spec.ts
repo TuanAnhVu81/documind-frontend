@@ -20,6 +20,7 @@ test('đọc nguồn từ BE thật theo message, desktop/mobile và xóa tài l
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);

@@ -18,6 +18,7 @@ test('usage và cài đặt dùng BE thật, số liệu demo cách ly và khôn
   const password = `Demo-${crypto.randomUUID()}!`;
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
@@ -95,6 +96,7 @@ test('usage và cài đặt dùng BE thật, số liệu demo cách ly và khôn
   const otherEmail = `phase09-other-${crypto.randomUUID()}@example.test`;
   await page.getByLabel('Email').fill(otherEmail);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
+  await page.getByLabel('Nhập lại mật khẩu').fill(password);
   await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
   await page.getByLabel('Email').fill(otherEmail);
   await page.getByLabel('Mật khẩu', { exact: true }).fill(password);
