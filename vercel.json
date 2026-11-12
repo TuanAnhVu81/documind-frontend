@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://documind-backend-tsl7.onrender.com/api/v1/:path*"
+    },
+    {
+      "source": "/actuator/health",
+      "destination": "https://documind-backend-tsl7.onrender.com/actuator/health"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
